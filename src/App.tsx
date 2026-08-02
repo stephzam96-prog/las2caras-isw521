@@ -4,10 +4,22 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
+
 function App() {
+  return (
+    <h1 className="text-4xl font-bold text-indigo-600 underline">
+      LasDosCaras
+    </h1>
+  )
+}
+
+export default App
+
+/*function App() {
   const [count, setCount] = useState(0)
 
   return (
+
     <>
       <section id="center">
         <div className="hero">
@@ -119,4 +131,4 @@ function App() {
   )
 }
 
-export default App
+export default App*/
