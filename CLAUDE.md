@@ -50,16 +50,35 @@ cualquier línea del código. Por lo tanto:
 
 | Código | Comportamiento esperado |
 |---|---|
-| 400 | Mostrar errores de validación **por campo**, nunca un mensaje genérico |
+| 400 | Mostrar los mensajes de validación como **lista**, no por campo individual (ver nota abajo) |
 | 401 | Limpiar auth, borrar token del storage, redirigir a `/login` ("Su sesión ha expirado") |
 | 403 | Mostrar página/toast de error de permisos. NO redirigir a login |
 | 404 | Página o mensaje inline contextual ("Esta publicación no existe o fue eliminada") |
-| 409 | Mensaje inline en el campo correspondiente (ej. correo duplicado) |
+| 409 | Mensaje inline general (ej. "Ese correo ya está registrado"), no atado a un input |
 | 422 | Mostrar el detalle de error que devuelve el API |
 | 500/502/503 | Mensaje genérico al usuario + log técnico en consola |
 
 Además: detectar `offline`/error de red y mostrar banner, reintento automático
 en GETs fallidos, nunca mostrar excepciones técnicas crudas al usuario.
+
+**Nota verificada contra el backend real (no es un supuesto):** el formato de
+error de esta API es `{ error: string, details?: { formErrors, fieldErrors } }`,
+generado con `ZodError.flatten()` sobre schemas que anidan el body/query en un
+objeto (`z.object({ body: {...} })`). Como `.flatten()` solo aplana un nivel,
+los mensajes de validación quedan agrupados bajo la clave `"body"` (o
+`"query"`), **no por nombre de campo** (`email`, `password`, etc.). Ejemplo real:
+
+```json
+{"error":"Validation failed","details":{"formErrors":[],"fieldErrors":{"body":["Invalid email","Password must be at least 8 characters"]}}}
+```
+
+Por eso `httpClient.ts` expone `ApiError.validationMessages: string[]` (lista
+plana de mensajes) en vez de un mapa por campo — no hay forma de saber a qué
+input pertenece cada mensaje. `LoginPage.tsx` y `RegistroPage.tsx` los
+muestran como una lista (`<ul>`) debajo del formulario, no debajo de cada
+input. Si el backend cambia el shape de error (por ejemplo, si el docente
+actualiza la API para no anidar el body), esta limitación desaparece y se
+podría volver a mapear por campo.
 
 ## Claves de localStorage (ya definidas — no inventar otras)
 

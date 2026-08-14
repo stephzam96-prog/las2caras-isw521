@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { ApiError, type FieldErrors } from '../../services/httpClient';
+import { ApiError } from '../../services/httpClient';
 
 export default function RegistroPage() {
   const { register, isAuthenticated } = useAuth();
@@ -9,7 +9,10 @@ export default function RegistroPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // La API agrupa los mensajes de validación bajo "body" (no por campo:
+  // ver nota en httpClient.ts), así que se muestran como lista, no atados
+  // a un input específico.
+  const [validationMessages, setValidationMessages] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Se guarda acá (no en el AuthContext) porque registrarse no autentica:
@@ -22,7 +25,7 @@ export default function RegistroPage() {
 
   function validateClientSide(): boolean {
     if (password.length < 8) {
-      setFieldErrors({ password: 'La contraseña debe tener al menos 8 caracteres.' });
+      setValidationMessages(['La contraseña debe tener al menos 8 caracteres.']);
       return false;
     }
     return true;
@@ -30,7 +33,7 @@ export default function RegistroPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setFieldErrors({});
+    setValidationMessages([]);
     setFormError(null);
 
     if (!validateClientSide()) return;
@@ -41,10 +44,10 @@ export default function RegistroPage() {
       setActivationToken(result.activationToken);
     } catch (error) {
       if (error instanceof ApiError) {
-        if (error.kind === 'validation' && error.fieldErrors) {
-          setFieldErrors(error.fieldErrors);
+        if (error.kind === 'validation' && error.validationMessages) {
+          setValidationMessages(error.validationMessages);
         } else if (error.kind === 'conflict') {
-          setFieldErrors({ email: 'Ese correo ya está registrado.' });
+          setFormError('Ese correo ya está registrado.');
         } else {
           setFormError(error.message);
         }
@@ -92,7 +95,6 @@ export default function RegistroPage() {
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
-          {fieldErrors.name && <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>}
         </div>
 
         <div>
@@ -107,7 +109,6 @@ export default function RegistroPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
-          {fieldErrors.email && <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div>
@@ -123,9 +124,15 @@ export default function RegistroPage() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
-          {fieldErrors.password && <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>}
         </div>
 
+        {validationMessages.length > 0 && (
+          <ul className="list-disc pl-5 text-sm text-red-600">
+            {validationMessages.map((msg) => (
+              <li key={msg}>{msg}</li>
+            ))}
+          </ul>
+        )}
         {formError && <p className="text-sm text-red-600">{formError}</p>}
 
         <button
