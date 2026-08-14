@@ -117,6 +117,29 @@ segundo plano.
 | `/admin/moderation` | Moderación de Contenido | Solo superadmin |
 | `/*` | 404 | Público |
 
+## `GridPublicaciones`/`TarjetaPublicacion` — regla de uso (importante)
+
+`GridPublicaciones` y `TarjetaPublicacion` (`components/publicaciones/`) están
+tipados contra el `View` **completo** de `types/index.ts` (con `sides[].description`,
+`likeCount`, `dislikeCount`, `myReaction`, `hashtags`, `totalLikes`, `isFavorite`,
+etc.). Úsenlos **solo** en pantallas que consuman `GET /views` o `GET /views/:id`
+(Tablero, Categoría, Perfil de Autor, Detalle de Publicación) — esos endpoints sí
+devuelven el `View` completo.
+
+**`GET /api/search?q=` NO devuelve el mismo shape.** Verificado contra el código
+fuente real del backend (`search.service.js`): los `views` que trae ese endpoint
+solo incluyen `sides: [{ type, title }]` (sin `description`, sin conteos de
+reacciones, sin `hashtags` a nivel de la vista). Por eso la Página de Búsqueda
+**no** reutiliza `GridPublicaciones`/`TarjetaPublicacion` — tiene su propio tipo
+liviano (`SearchViewResult` en `services/busquedaService.ts`) y una tarjeta de
+resultado simple (título + categoría + link a `/views/:id`).
+
+Si alguien necesita forzar los datos de `/search` dentro del `View` completo,
+NO lo hagan con `as any` (viola la regla de no-`any` del proyecto) — pregunten
+antes, puede que haga falta pedirle al docente que el endpoint de búsqueda
+devuelva más campos, o hacer un fetch adicional a `GET /views/:id` por cada
+resultado (con su costo de N+1 requests).
+
 ## Estructura de carpetas (ver `estructura-carpetas.md` para el detalle)
 
 ```

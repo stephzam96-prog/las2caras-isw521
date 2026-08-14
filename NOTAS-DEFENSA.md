@@ -39,6 +39,15 @@ Formato sugerido por entrada:
 - Reacciones: estado local en TarjetaPublicacion, se actualiza con la
   respuesta del POST sin que el padre (Tablero) necesite saberlo.
 
+---
+## Búsqueda
+- Decisión: /api/search devuelve datos parciales de las publicaciones 
+  (sin likeCount, sin sides completos), distinto a GET /views. Por eso 
+  Búsqueda usa un tipo TypeScript propio y una tarjeta de resultado 
+  liviana, en vez de forzar los datos parciales dentro del tipo View 
+  completo con un `as any` (que hubiera violado la regla de no-any 
+  del proyecto y podía romper en runtime).
+
 ## Login
 ## Registro
 ## Crear/Editar Publicación
