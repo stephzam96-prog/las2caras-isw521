@@ -1,11 +1,18 @@
 // Único módulo del proyecto que llama localStorage.getItem/setItem directo.
 // Todo lo demás (context, hooks, páginas) pasa por acá.
 
-import type { User } from '../types';
+import type { Category, Hashtag, User } from '../types';
+import type { ViewSort } from './publicacionesService';
 
 export interface StoredAuth {
   token: string;
   user: User;
+}
+
+export interface TableroFilters {
+  category?: string;
+  hashtag?: string;
+  sort?: ViewSort;
 }
 
 const KEYS = {
@@ -18,6 +25,9 @@ const KEYS = {
   theme: 'lasdoscaras_theme',
   history: 'lasdoscaras_history',
 } as const;
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const THIRTY_MIN_MS = 30 * 60 * 1000;
 
 function read<T>(key: string): T | null {
   try {
@@ -36,6 +46,24 @@ function remove(key: string): void {
   localStorage.removeItem(key);
 }
 
+// Envoltorio con vencimiento para el patron stale-while-revalidate: dentro
+// del TTL se puede mostrar de inmediato; vencido, se trata como "no hay
+// cache" (se espera el fetch) en vez de mostrar datos potencialmente viejos.
+interface TtlEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+function readTtl<T>(key: string): T | null {
+  const entry = read<TtlEntry<T>>(key);
+  if (!entry || Date.now() > entry.expiresAt) return null;
+  return entry.value;
+}
+
+function writeTtl<T>(key: string, value: T, ttlMs: number): void {
+  write<TtlEntry<T>>(key, { value, expiresAt: Date.now() + ttlMs });
+}
+
 export const cacheService = {
   getAuth(): StoredAuth | null {
     return read<StoredAuth>(KEYS.auth);
@@ -45,5 +73,28 @@ export const cacheService = {
   },
   clearAuth(): void {
     remove(KEYS.auth);
+  },
+
+  getCategories(): Category[] | null {
+    return readTtl<Category[]>(KEYS.categories);
+  },
+  setCategories(categories: Category[]): void {
+    writeTtl(KEYS.categories, categories, ONE_HOUR_MS);
+  },
+
+  // Guarda solo las sugerencias iniciales (busqueda vacia), no cada
+  // busqueda del autocomplete -- esas siempre van directo a la red.
+  getHashtags(): Hashtag[] | null {
+    return readTtl<Hashtag[]>(KEYS.hashtags);
+  },
+  setHashtags(hashtags: Hashtag[]): void {
+    writeTtl(KEYS.hashtags, hashtags, THIRTY_MIN_MS);
+  },
+
+  getFilters(): TableroFilters | null {
+    return read<TableroFilters>(KEYS.filters);
+  },
+  setFilters(filters: TableroFilters): void {
+    write(KEYS.filters, filters);
   },
 };

@@ -9,7 +9,7 @@ import { cacheService } from './cacheService';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 export type ApiErrorKind =
-  | 'validation'   // 400 -> errores por campo
+  | 'validation'   // 400 -> lista de mensajes de validación
   | 'unauthorized' // 401
   | 'forbidden'    // 403
   | 'not_found'    // 404
@@ -18,21 +18,37 @@ export type ApiErrorKind =
   | 'server'       // 500/502/503
   | 'network';     // fetch lanzó (offline, DNS, CORS, etc.)
 
-export interface FieldErrors {
-  [field: string]: string;
+// Forma real de los errores de esta API: { error: string, details?: {...} }.
+// details viene de ZodError.flatten(), que solo aplana un nivel: como los
+// schemas anidan el body en z.object({ body: {...} }), los mensajes quedan
+// agrupados bajo la clave "body"/"query" en vez de por nombre de campo
+// (email, password, etc.). Por eso no se puede mapear un mensaje a un
+// input especifico -- solo tenemos una lista plana de mensajes.
+interface ApiErrorBody {
+  error?: string;
+  details?: {
+    formErrors?: string[];
+    fieldErrors?: Record<string, string[]>;
+  };
 }
 
 export class ApiError extends Error {
   kind: ApiErrorKind;
   status?: number;
-  fieldErrors?: FieldErrors;
+  validationMessages?: string[];
 
-  constructor(kind: ApiErrorKind, message: string, status?: number, fieldErrors?: FieldErrors) {
+  constructor(kind: ApiErrorKind, message: string, status?: number, validationMessages?: string[]) {
     super(message);
     this.kind = kind;
     this.status = status;
-    this.fieldErrors = fieldErrors;
+    this.validationMessages = validationMessages;
   }
+}
+
+function extractValidationMessages(details: ApiErrorBody['details']): string[] | undefined {
+  if (!details) return undefined;
+  const messages = [...(details.formErrors ?? []), ...Object.values(details.fieldErrors ?? {}).flat()];
+  return messages.length > 0 ? messages : undefined;
 }
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
@@ -70,26 +86,29 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     return undefined as T;
   }
 
-  const data = await response.json().catch(() => null);
+  const data: ApiErrorBody | null = await response.json().catch(() => null);
 
   if (response.ok) {
     return data as T;
   }
 
+  const message = data?.error ?? 'Ocurrió un error inesperado.';
+  const validationMessages = extractValidationMessages(data?.details);
+
   switch (response.status) {
     case 400:
-      throw new ApiError('validation', 'Errores de validación', 400, data?.errors ?? data);
+      throw new ApiError('validation', message, 400, validationMessages);
     case 401:
       window.dispatchEvent(new CustomEvent('auth:expired'));
-      throw new ApiError('unauthorized', 'Su sesión ha expirado', 401);
+      throw new ApiError('unauthorized', message, 401);
     case 403:
-      throw new ApiError('forbidden', 'No tenés permiso para realizar esta acción', 403);
+      throw new ApiError('forbidden', message, 403);
     case 404:
-      throw new ApiError('not_found', data?.message ?? 'El recurso no existe o fue eliminado', 404);
+      throw new ApiError('not_found', message, 404);
     case 409:
-      throw new ApiError('conflict', data?.message ?? 'Conflicto con el estado actual', 409, data?.errors ?? data);
+      throw new ApiError('conflict', message, 409, validationMessages);
     case 422:
-      throw new ApiError('unprocessable', data?.message ?? 'Datos no procesables', 422, data?.errors ?? data);
+      throw new ApiError('unprocessable', message, 422, validationMessages);
     default:
       throw new ApiError('server', 'Ocurrió un error en el servidor. Intentá de nuevo más tarde.', response.status);
   }

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate, Link, type Location } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { ApiError, type FieldErrors } from '../../services/httpClient';
+import { ApiError } from '../../services/httpClient';
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -10,7 +10,10 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // La API agrupa los mensajes de validación bajo "body" (no por campo:
+  // ver nota en httpClient.ts), así que se muestran como lista, no atados
+  // a un input específico.
+  const [validationMessages, setValidationMessages] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -22,7 +25,7 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setFieldErrors({});
+    setValidationMessages([]);
     setFormError(null);
     setIsSubmitting(true);
 
@@ -32,8 +35,8 @@ export default function LoginPage() {
       navigate(from?.pathname ?? '/', { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
-        if (error.kind === 'validation' && error.fieldErrors) {
-          setFieldErrors(error.fieldErrors);
+        if (error.kind === 'validation' && error.validationMessages) {
+          setValidationMessages(error.validationMessages);
         } else if (error.kind === 'unauthorized') {
           setFormError('Correo o contraseña incorrectos.');
         } else {
@@ -64,7 +67,6 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
-          {fieldErrors.email && <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div>
@@ -79,9 +81,15 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
-          {fieldErrors.password && <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>}
         </div>
 
+        {validationMessages.length > 0 && (
+          <ul className="list-disc pl-5 text-sm text-red-600">
+            {validationMessages.map((msg) => (
+              <li key={msg}>{msg}</li>
+            ))}
+          </ul>
+        )}
         {formError && <p className="text-sm text-red-600">{formError}</p>}
 
         <button
