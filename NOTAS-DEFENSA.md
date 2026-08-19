@@ -39,6 +39,18 @@ Formato sugerido por entrada:
 - Reacciones: estado local en TarjetaPublicacion, se actualiza con la
   respuesta del POST sin que el padre (Tablero) necesite saberlo.
 
+## Búsqueda (Página de Búsqueda)
+- **Qué hace:** Permite buscar publicaciones de forma interactiva con entrada de texto mediante debounce (evita peticiones excesivas a la API). Soporta URL amigable `/search?q=...` para compartir búsquedas y maneja estados de carga, sin resultados, error y éxito.
+- **Endpoints del API que usa:** `GET /api/search?q=...` (a través de `busquedaService.search`).
+- **Decisiones de diseño y por qué:**
+  - **No reutilizar `GridPublicaciones`/`TarjetaPublicacion`**: El endpoint `GET /api/search` devuelve un listado liviano de vistas (`SearchViewResult`) sin `description` ni contadores de reacciones a nivel de cada vista. Reutilizar la tarjeta general obligaría a forzar el tipado de TypeScript o hacer llamadas N+1, por lo que se diseñó la tarjeta simplificada `ResultadoBusquedaCard`.
+  - **Sincronización de estado en el render para evitar warning de ESLint**: En lugar de llamar de forma síncrona a `setResults` y `setStatus` en el cuerpo de `useEffect` (lo cual genera un warning de `react-hooks/set-state-in-effect` en las reglas estrictas de ESLint), se implementó un control de comparación en la fase de renderizado `debouncedQuery !== prevQuery`. Al cambiar la consulta, se inicializa el estado a `'loading'` (o `'idle'` si está vacía) antes de renderizar, evitando renders en cascada.
+  - **Limpieza de efecto (`active = false`)**: En el `useEffect` asíncrono se utiliza una variable local `active` que se vuelve `false` en la función de limpieza (cleanup). Esto previene condiciones de carrera si el usuario escribe de nuevo rápidamente o abandona la pantalla antes de que finalice la petición HTTP.
+- **Puntos donde podrían preguntarme algo tricky:**
+  - *¿Por qué el listado de búsqueda es diferente al del tablero principal?* Por el shape (estructura) de respuesta que devuelve el backend en `GET /api/search` vs `GET /views`. El de búsqueda no trae `description`, hashtags ni reacciones, por lo que necesita una tarjeta y tipo de datos más liviano (`SearchViewResult`).
+  - *¿Cómo funciona el debounce de búsqueda?* Evita enviar un request HTTP por cada tecla que presiona el usuario. Espera a que el usuario deje de escribir durante 300ms antes de cambiar el estado de `debouncedQuery` y disparar la llamada al API.
+  - *¿Por qué no se usó un `useEffect` simple para inicializar los estados `results` y `status` al borrar el input?* Para evitar infringir la regla de ESLint `react-hooks/set-state-in-effect` que previene actualizaciones de estado síncronas en el cuerpo de un efecto, las cuales provocan re-renderizados en cascada innecesarios. Al ajustar el estado durante el renderizado (cuando `debouncedQuery !== prevQuery`), React descarta el renderizado actual e inmediatamente inicia el nuevo renderizado con los estados actualizados, lo que mejora la eficiencia y limpieza del código.
+
 ## Login
 ## Registro
 ## Crear/Editar Publicación
