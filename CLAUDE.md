@@ -50,16 +50,35 @@ cualquier línea del código. Por lo tanto:
 
 | Código | Comportamiento esperado |
 |---|---|
-| 400 | Mostrar errores de validación **por campo**, nunca un mensaje genérico |
+| 400 | Mostrar los mensajes de validación como **lista**, no por campo individual (ver nota abajo) |
 | 401 | Limpiar auth, borrar token del storage, redirigir a `/login` ("Su sesión ha expirado") |
 | 403 | Mostrar página/toast de error de permisos. NO redirigir a login |
 | 404 | Página o mensaje inline contextual ("Esta publicación no existe o fue eliminada") |
-| 409 | Mensaje inline en el campo correspondiente (ej. correo duplicado) |
+| 409 | Mensaje inline general (ej. "Ese correo ya está registrado"), no atado a un input |
 | 422 | Mostrar el detalle de error que devuelve el API |
 | 500/502/503 | Mensaje genérico al usuario + log técnico en consola |
 
 Además: detectar `offline`/error de red y mostrar banner, reintento automático
 en GETs fallidos, nunca mostrar excepciones técnicas crudas al usuario.
+
+**Nota verificada contra el backend real (no es un supuesto):** el formato de
+error de esta API es `{ error: string, details?: { formErrors, fieldErrors } }`,
+generado con `ZodError.flatten()` sobre schemas que anidan el body/query en un
+objeto (`z.object({ body: {...} })`). Como `.flatten()` solo aplana un nivel,
+los mensajes de validación quedan agrupados bajo la clave `"body"` (o
+`"query"`), **no por nombre de campo** (`email`, `password`, etc.). Ejemplo real:
+
+```json
+{"error":"Validation failed","details":{"formErrors":[],"fieldErrors":{"body":["Invalid email","Password must be at least 8 characters"]}}}
+```
+
+Por eso `httpClient.ts` expone `ApiError.validationMessages: string[]` (lista
+plana de mensajes) en vez de un mapa por campo — no hay forma de saber a qué
+input pertenece cada mensaje. `LoginPage.tsx` y `RegistroPage.tsx` los
+muestran como una lista (`<ul>`) debajo del formulario, no debajo de cada
+input. Si el backend cambia el shape de error (por ejemplo, si el docente
+actualiza la API para no anidar el body), esta limitación desaparece y se
+podría volver a mapear por campo.
 
 ## Claves de localStorage (ya definidas — no inventar otras)
 
@@ -97,6 +116,29 @@ segundo plano.
 | `/admin/categories` | Gestión de Categorías | Solo superadmin |
 | `/admin/moderation` | Moderación de Contenido | Solo superadmin |
 | `/*` | 404 | Público |
+
+## `GridPublicaciones`/`TarjetaPublicacion` — regla de uso (importante)
+
+`GridPublicaciones` y `TarjetaPublicacion` (`components/publicaciones/`) están
+tipados contra el `View` **completo** de `types/index.ts` (con `sides[].description`,
+`likeCount`, `dislikeCount`, `myReaction`, `hashtags`, `totalLikes`, `isFavorite`,
+etc.). Úsenlos **solo** en pantallas que consuman `GET /views` o `GET /views/:id`
+(Tablero, Categoría, Perfil de Autor, Detalle de Publicación) — esos endpoints sí
+devuelven el `View` completo.
+
+**`GET /api/search?q=` NO devuelve el mismo shape.** Verificado contra el código
+fuente real del backend (`search.service.js`): los `views` que trae ese endpoint
+solo incluyen `sides: [{ type, title }]` (sin `description`, sin conteos de
+reacciones, sin `hashtags` a nivel de la vista). Por eso la Página de Búsqueda
+**no** reutiliza `GridPublicaciones`/`TarjetaPublicacion` — tiene su propio tipo
+liviano (`SearchViewResult` en `services/busquedaService.ts`) y una tarjeta de
+resultado simple (título + categoría + link a `/views/:id`).
+
+Si alguien necesita forzar los datos de `/search` dentro del `View` completo,
+NO lo hagan con `as any` (viola la regla de no-`any` del proyecto) — pregunten
+antes, puede que haga falta pedirle al docente que el endpoint de búsqueda
+devuelva más campos, o hacer un fetch adicional a `GET /views/:id` por cada
+resultado (con su costo de N+1 requests).
 
 ## Estructura de carpetas (ver `estructura-carpetas.md` para el detalle)
 
