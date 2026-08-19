@@ -15,6 +15,15 @@ export interface TableroFilters {
   sort?: ViewSort;
 }
 
+// Guardamos algo mas que el id para poder pintar un widget de "vistos
+// recientemente" en el futuro sin tener que re-fetchear cada publicacion.
+export interface HistoryEntry {
+  id: string;
+  title: string; // titulo del Lado A
+  categoryName: string;
+  viewedAt: string; // ISO
+}
+
 const KEYS = {
   auth: 'lasdoscaras_auth',
   categories: 'lasdoscaras_categories',
@@ -28,6 +37,7 @@ const KEYS = {
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const THIRTY_MIN_MS = 30 * 60 * 1000;
+const MAX_HISTORY = 20;
 
 function read<T>(key: string): T | null {
   try {
@@ -96,5 +106,17 @@ export const cacheService = {
   },
   setFilters(filters: TableroFilters): void {
     write(KEYS.filters, filters);
+  },
+
+  getHistory(): HistoryEntry[] {
+    return read<HistoryEntry[]>(KEYS.history) ?? [];
+  },
+  // FIFO, maximo 20: si la publicacion ya estaba en el historial, se saca
+  // de su posicion vieja y se vuelve a insertar al frente (no queda
+  // duplicada ni se pierde el cupo por una repetida).
+  addToHistory(entry: Omit<HistoryEntry, 'viewedAt'>): void {
+    const withoutDuplicate = cacheService.getHistory().filter((h) => h.id !== entry.id);
+    const updated = [{ ...entry, viewedAt: new Date().toISOString() }, ...withoutDuplicate].slice(0, MAX_HISTORY);
+    write(KEYS.history, updated);
   },
 };

@@ -20,6 +20,10 @@ export interface ListViewsResponse {
   views: View[];
 }
 
+export interface GetViewResponse {
+  view: View;
+}
+
 // La API identifica los lados como 'a'/'b' en la URL de reacciones, no como
 // SideType ('SIDE'/'COUNTERPART'). SIDE = lado A, COUNTERPART = lado B.
 export type ViewSideLetter = 'a' | 'b';
@@ -54,10 +58,25 @@ export const publicacionesService = {
   listViews(params: ListViewsParams = {}): Promise<ListViewsResponse> {
     return httpClient.get<ListViewsResponse>(`/views${buildQuery(params)}`);
   },
+  // Si la vista esta UNPUBLISHED, el backend devuelve 404 (no 403) salvo
+  // que quien pide sea el autor o superadmin -- por eso "no existe" y
+  // "fue despublicada" se ven identicas desde el cliente.
+  getView(id: string): Promise<GetViewResponse> {
+    return httpClient.get<GetViewResponse>(`/views/${id}`);
+  },
   // La API hace upsert: repetir la misma reacción no la "saca", y no existe
   // endpoint para quitarla, solo para cambiarla (like <-> dislike).
   reactToSide(viewId: string, side: ViewSideLetter, type: ReactionType): Promise<SideReactionResponse> {
     const action = type === 'LIKE' ? 'like' : 'dislike';
     return httpClient.post<SideReactionResponse>(`/views/${viewId}/sides/${side}/${action}`);
+  },
+  // Ambas requieren rol SUPERADMIN en el backend -- ni siquiera el autor
+  // puede despublicar/republicar su propia publicacion (verificado contra
+  // el codigo fuente real: requireRole('SUPERADMIN') en la ruta).
+  unpublishView(id: string): Promise<GetViewResponse> {
+    return httpClient.patch<GetViewResponse>(`/views/${id}/unpublish`);
+  },
+  publishView(id: string): Promise<GetViewResponse> {
+    return httpClient.patch<GetViewResponse>(`/views/${id}/publish`);
   },
 };
