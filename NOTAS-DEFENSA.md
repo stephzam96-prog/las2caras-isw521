@@ -70,5 +70,20 @@ Formato sugerido por entrada:
 ## Perfil de Usuario
 ## Detalle de Publicación
 ## Admin — Usuarios
-## Admin — Categorías
+## Admin — Categorías (Gestión de Categorías)
+- **Qué hace:** Proporciona una interfaz CRUD para que el SUPERADMIN pueda listar, crear, editar y eliminar categorías. Muestra visualmente las categorías activas y eliminadas.
+- **Endpoints del API que usa:**
+  - `GET /api/admin/categories` (lista categorías, incluyendo las marcadas con soft-delete).
+  - `POST /api/admin/categories` (crea una nueva categoría).
+  - `PUT /api/admin/categories/:id` (actualiza el nombre de una categoría existente).
+  - `DELETE /api/admin/categories/:id` (aplica soft-delete a una categoría).
+- **Decisiones de diseño y por qué:**
+  - **Manejo de soft-delete en la UI**: El backend realiza un borrado lógico (soft-delete), conservando el registro con `deletedAt` no nulo. En lugar de remover las categorías eliminadas del estado local tras borrarlas, la UI las actualiza marcándolas localmente con un `deletedAt` simulado (fecha actual), lo que hace que se sigan listando en la tabla pero con el badge visual "Eliminada".
+  - **Uso de `window.confirm` de seguridad**: La API no restringe la eliminación de categorías que contengan publicaciones asociadas. Como medida preventiva, se incluyó un cuadro de confirmación para evitar borrados accidentales de categorías críticas en uso.
+  - **Optimización de renderizado (sin refetch completo)**: Al crear o editar, el estado local de `categories` se actualiza agregando la nueva entidad o reemplazando la existente en base a la respuesta del servidor, evitando peticiones adicionales N+1 o recargas completas.
+  - **Manejo de error 409 (Conflicto)**: Si se intenta crear o editar una categoría con un nombre ya existente, el backend lanza un error 409. Se captura este tipo de error (`error.kind === 'conflict'`) de forma específica para mostrar una alerta visual clara ("Ya existe una categoría con este nombre") directamente en el formulario modal.
+- **Puntos donde podrían preguntarme algo tricky:**
+  - *¿Qué sucede si eliminas una categoría con publicaciones activas?* La API lo permite directamente ya que el backend realiza un soft-delete y no tiene restricciones sobre relaciones de FK activas al borrar. Las publicaciones existentes seguirán apuntando a su categoryId y la categoría seguirá listándose en administración con estado "Eliminada" para auditoría.
+  - *¿Cómo se protegió la ruta de esta pantalla?* Se anidó la ruta `/admin/categories` dentro de un `<Route element={<AuthGuard />}>` y, dentro de este, se envolvió en un `<Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>`. Esto garantiza que solo los usuarios autenticados con rol `SUPERADMIN` puedan acceder, redirigiendo a los usuarios normales a la vista `/403` ("No tenés permiso").
+
 ## Admin — Moderación
