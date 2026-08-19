@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ReactionType, View, ViewSide } from '../../types';
-import { useAuth } from '../../hooks/useAuth';
-import { publicacionesService, toSideLetter } from '../../services/publicacionesService';
+import { useSideReactions } from '../../hooks/useSideReactions';
 
 interface TarjetaPublicacionProps {
   view: View;
@@ -17,35 +15,12 @@ interface TarjetaPublicacionProps {
 // unico iria en contra de esa idea y ademas quedaria desactualizado en
 // cuanto el usuario reaccione a un solo lado.
 export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
-  const { isAuthenticated } = useAuth();
-  // Copia local de los lados: se actualiza con la respuesta del POST de
-  // reaccion sin tener que refetchear ni avisarle a quien renderiza la
-  // lista (Tablero/Categoria/etc. no necesitan saber que reaccionaste).
-  const [sides, setSides] = useState<ViewSide[]>(view.sides);
-  const [reactingSideId, setReactingSideId] = useState<string | null>(null);
+  // La logica de reaccion (POST + merge del estado local) vive en el hook
+  // para poder reutilizarla en DetallePublicacionPage sin duplicarla.
+  const { sides, react, reactingSideId, isAuthenticated } = useSideReactions(view);
 
   const sideA = sides.find((s) => s.type === 'SIDE');
   const sideB = sides.find((s) => s.type === 'COUNTERPART');
-
-  async function handleReact(side: ViewSide, type: ReactionType) {
-    if (!isAuthenticated || reactingSideId) return;
-    setReactingSideId(side.id);
-    try {
-      const result = await publicacionesService.reactToSide(view.id, toSideLetter(side.type), type);
-      setSides((prev) =>
-        prev.map((s) =>
-          s.id === side.id
-            ? { ...s, likeCount: result.likeCount, dislikeCount: result.dislikeCount, myReaction: result.myReaction }
-            : s,
-        ),
-      );
-    } catch {
-      // Errores de red/servidor en una reaccion no ameritan interrumpir la
-      // tarjeta entera; el usuario puede reintentar con otro clic.
-    } finally {
-      setReactingSideId(null);
-    }
-  }
 
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -72,14 +47,14 @@ export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
           <BotonesReaccion
             side={sideA}
             disabled={!isAuthenticated || reactingSideId === sideA.id}
-            onReact={(type) => handleReact(sideA, type)}
+            onReact={(type) => react(sideA, type)}
           />
         )}
         {sideB && (
           <BotonesReaccion
             side={sideB}
             disabled={!isAuthenticated || reactingSideId === sideB.id}
-            onReact={(type) => handleReact(sideB, type)}
+            onReact={(type) => react(sideB, type)}
           />
         )}
       </div>

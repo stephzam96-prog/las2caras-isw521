@@ -51,6 +51,19 @@ Formato sugerido por entrada:
   - *¿Cómo funciona el debounce de búsqueda?* Evita enviar un request HTTP por cada tecla que presiona el usuario. Espera a que el usuario deje de escribir durante 300ms antes de cambiar el estado de `debouncedQuery` y disparar la llamada al API.
   - *¿Por qué no se usó un `useEffect` simple para inicializar los estados `results` y `status` al borrar el input?* Para evitar infringir la regla de ESLint `react-hooks/set-state-in-effect` que previene actualizaciones de estado síncronas en el cuerpo de un efecto, las cuales provocan re-renderizados en cascada innecesarios. Al ajustar el estado durante el renderizado (cuando `debouncedQuery !== prevQuery`), React descarta el renderizado actual e inmediatamente inicia el nuevo renderizado con los estados actualizados, lo que mejora la eficiencia y limpieza del código.
 
+  ---
+  ## Detalle de Publicación
+- Despublicar es exclusivo de superadmin, el autor NO puede (verificado 
+  en views.service.js del backend, requireRole('SUPERADMIN') en la ruta 
+  PATCH /unpublish). El autor sí puede editar su propia publicación.
+- Backend devuelve 404 tanto para "no existe" como "despublicada" -- no 
+  se pueden distinguir del lado del cliente, mensaje genérico.
+- Hilos de comentarios soportan un nivel de respuestas anidadas (no 
+  respuesta-a-respuesta), reflejando el límite real del include de Prisma.
+- Refactor: se extrajo la lógica de reacciones (like/dislike por lado) 
+  a un hook useSideReactions, compartido entre TarjetaPublicacion y 
+  DetallePublicacionPage, para no duplicar el POST-y-merge del estado.
+
 ## Login
 ## Registro
 ## Crear/Editar Publicación
