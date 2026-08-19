@@ -8,6 +8,7 @@ import { AuthGuard } from './AuthGuard';
 import CategoriaPage from '../pages/categoria/CategoriaPage';
 import BusquedaPage from '../pages/busqueda/BusquedaPage';
 import DetallePublicacionPage from '../pages/publicacion/DetallePublicacionPage';
+import PerfilAutorPage from '../pages/perfil/PerfilAutorPage';
 
 // Rutas de auth y tablero ya armadas acá; el resto (categorías, búsqueda,
 // admin, etc.) se va agregando pantalla por pantalla en sus propias features.
@@ -21,6 +22,7 @@ export function AppRoutes() {
       <Route path="/categories/:id" element={<CategoriaPage />} />
       <Route path="/search" element={<BusquedaPage />} />
       <Route path="/views/:id" element={<DetallePublicacionPage />} />
+      <Route path="/authors/:id" element={<PerfilAutorPage />} />
 
       <Route element={<AuthGuard />}>
         {/* futuras rutas autenticadas: /views/new, /profile, etc. */}
