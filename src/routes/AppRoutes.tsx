@@ -9,6 +9,8 @@ import CategoriaPage from '../pages/categoria/CategoriaPage';
 import BusquedaPage from '../pages/busqueda/BusquedaPage';
 import DetallePublicacionPage from '../pages/publicacion/DetallePublicacionPage';
 import PerfilAutorPage from '../pages/perfil/PerfilAutorPage';
+import AdminCategoriasPage from '../pages/admin/AdminCategoriasPage';
+import { RoleGuard } from './RoleGuard';
 
 // Rutas de auth y tablero ya armadas acá; el resto (categorías, búsqueda,
 // admin, etc.) se va agregando pantalla por pantalla en sus propias features.
@@ -26,6 +28,9 @@ export function AppRoutes() {
 
       <Route element={<AuthGuard />}>
         {/* futuras rutas autenticadas: /views/new, /profile, etc. */}
+        <Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>
+          <Route path="/admin/categories" element={<AdminCategoriasPage />} />
+        </Route>
       </Route>
 
       <Route
