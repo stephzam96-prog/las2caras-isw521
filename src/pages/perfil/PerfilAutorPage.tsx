@@ -1,54 +1,125 @@
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import type { View } from '../../types';
+import { authorsService, type AuthorProfile } from '../../services/authorsService';
+import { publicacionesService } from '../../services/publicacionesService';
+import { ApiError } from '../../services/httpClient';
+import GridPublicaciones from '../../components/publicaciones/GridPublicaciones';
+import Spinner from '../../components/ui/Spinner';
+import EmptyState from '../../components/ui/EmptyState';
 
-// TODO (equipo): PerfilAutorPage -- fetch completo pendiente.
-//
-// 1. Traer los datos publicos del autor:
-//      authorsService.getAuthor(id)
-//      (services/authorsService.ts, ya armado, mismo patron que
-//      categoriasService.ts) -- devuelve
-//      { author: { id, name, createdAt, publishedViewsCount } }.
-//
-// 2. Traer sus publicaciones:
-//      publicacionesService.listViews({ autorId: id, limit: 50 })
-//      (sin "Cargar mas" -- un fetch simple alcanza, ya acordado con el
-//      equipo). El resultado (`views: View[]`) se pasa directo a
-//      <GridPublicaciones views={views} />
-//      (components/publicaciones/GridPublicaciones.tsx) -- se reutiliza
-//      tal cual, sin transformar nada (a diferencia de Busqueda, /views
-//      ya devuelve el View completo).
-//
-// Guiate por CategoriaPage.tsx (src/pages/categoria/CategoriaPage.tsx)
-// como referencia de patron: dos fetches independientes (autor y
-// publicaciones), cada uno con su propio estado de loading/error, usando
-// components/ui/Spinner.tsx y components/ui/EmptyState.tsx para esos
-// estados.
-//
-// 404: si el autor no existe, authorsService.getAuthor tira un ApiError
-// con kind === 'not_found' (importalo de services/httpClient.ts).
-// Mostralo con EmptyState inline, mismo patron que usa
-// DetallePublicacionPage.tsx para "esta publicacion no existe" (no
-// redirijas a /404).
-//
-// Header sugerido una vez que `author` este cargado: nombre, fecha de
-// registro (author.createdAt) y author.publishedViewsCount. Mira el
-// estilo de header que usa DetallePublicacionPage.tsx para mantener
-// consistencia visual.
-//
-// Estados sugeridos:
-//   authorStatus: 'loading' | 'success' | 'notfound' | 'error'
-//   viewsStatus: 'loading' | 'success' | 'empty' | 'error' (independiente
-//   del estado del autor -- si una de las dos falla, la otra puede seguir
-//   mostrando lo suyo)
+// Dos fetches independientes (autor + sus publicaciones), cada uno con su
+// propio estado de loading/error -- mismo patrón que CategoriaPage.tsx y
+// DetallePublicacionPage.tsx.
+type AuthorStatus = 'loading' | 'success' | 'notfound' | 'error';
+type ViewsStatus = 'loading' | 'success' | 'empty' | 'error';
 
 export default function PerfilAutorPage() {
   const { id } = useParams<{ id: string }>();
 
-  // TODO (equipo): reemplazar este placeholder por la implementacion real
-  // (los dos fetches + los estados de arriba). Esto solo existe para que
-  // el archivo compile y la ruta no rompa mientras no este terminado.
+  const [author, setAuthor] = useState<AuthorProfile | null>(null);
+  const [authorStatus, setAuthorStatus] = useState<AuthorStatus>('loading');
+
+  const [views, setViews] = useState<View[]>([]);
+  const [viewsStatus, setViewsStatus] = useState<ViewsStatus>('loading');
+
+  // 1. Datos públicos del autor. authorsService.getAuthor tira un ApiError
+  //    con kind === 'not_found' si el id no existe -> lo mostramos inline
+  //    (mismo patrón que DetallePublicacionPage.tsx), sin redirigir a /404.
+  useEffect(() => {
+    if (!id) return;
+    setAuthorStatus('loading');
+    authorsService
+      .getAuthor(id)
+      .then(({ author }) => {
+        setAuthor(author);
+        setAuthorStatus('success');
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.kind === 'not_found') {
+          setAuthorStatus('notfound');
+        } else {
+          console.error('No se pudo cargar el autor', err);
+          setAuthorStatus('error');
+        }
+      });
+  }, [id]);
+
+  // 2. Publicaciones del autor. Fetch simple (sin "Cargar más"): el result
+  //    (`views`) se pasa directo a <GridPublicaciones />. Independiente del
+  //    autor: si una de las dos falla, la otra sigue mostrando lo suyo.
+  useEffect(() => {
+    if (!id) return;
+    setViewsStatus('loading');
+    publicacionesService
+      .listViews({ autorId: id, limit: 50 })
+      .then((result) => {
+        setViews(result.views);
+        setViewsStatus(result.total === 0 ? 'empty' : 'success');
+      })
+      .catch((err) => {
+        console.error('No se pudieron cargar las publicaciones del autor', err);
+        setViewsStatus('error');
+      });
+  }, [id]);
+
+  // 404 inline: el autor no existe.
+  if (authorStatus === 'notfound') {
+    return (
+      <EmptyState
+        title="Este autor no existe"
+        message="Puede que el link esté roto o que el perfil haya sido eliminado."
+      />
+    );
+  }
+
+  if (authorStatus === 'loading') {
+    return <Spinner label="Cargando perfil…" />;
+  }
+
+  if (authorStatus === 'error' || !author) {
+    return (
+      <EmptyState
+        title="No pudimos cargar el perfil"
+        message="Revisá tu conexión e intentá de nuevo."
+      />
+    );
+  }
+
+  // 3. Header: nombre, fecha de registro y cantidad de publicaciones
+  //    publicadas. Estilo alineado con el header de DetallePublicacionPage.
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      <p className="text-gray-500 dark:text-gray-400">TODO: perfil del autor {id}</p>
+      <header className="mb-6">
+        <nav className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+          <Link to="/" className="hover:underline">
+            Tablero
+          </Link>{' '}
+          / Autor
+        </nav>
+        <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{author.name}</h1>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span>Registrado el {new Date(author.createdAt).toLocaleDateString('es-AR')}</span>
+          <span>·</span>
+          <span>
+            {author.publishedViewsCount}{' '}
+            {author.publishedViewsCount === 1 ? 'publicación publicada' : 'publicaciones publicadas'}
+          </span>
+        </div>
+      </header>
+
+      {viewsStatus === 'loading' && <Spinner label="Cargando publicaciones…" />}
+
+      {viewsStatus === 'error' && (
+        <EmptyState
+          title="No pudimos cargar las publicaciones"
+          message="Revisá tu conexión e intentá de nuevo."
+        />
+      )}
+
+      {viewsStatus === 'empty' && <EmptyState title="Este autor todavía no tiene publicaciones publicadas" />}
+
+      {viewsStatus === 'success' && <GridPublicaciones views={views} />}
     </div>
   );
 }
