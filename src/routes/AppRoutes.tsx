@@ -13,6 +13,7 @@ import PerfilAutorPage from '../pages/perfil/PerfilAutorPage';
 import PerfilUsuarioPage from '../pages/perfil/PerfilUsuarioPage';
 import AdminCategoriasPage from '../pages/admin/AdminCategoriasPage';
 import AdminUsuariosPage from '../pages/admin/AdminUsuariosPage';
+import AdminModeracionPage from '../pages/admin/AdminModeracionPage';
 import { RoleGuard } from './RoleGuard';
 
 // Rutas de auth y tablero ya armadas acá; el resto (categorías, búsqueda,
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>
           <Route path="/admin/categories" element={<AdminCategoriasPage />} />
           <Route path="/admin/users" element={<AdminUsuariosPage />} />
+          <Route path="/admin/moderation" element={<AdminModeracionPage />} />
         </Route>
       </Route>
 
