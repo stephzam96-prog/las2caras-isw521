@@ -86,4 +86,20 @@ Formato sugerido por entrada:
   - *¿Qué sucede si eliminas una categoría con publicaciones activas?* La API lo permite directamente ya que el backend realiza un soft-delete y no tiene restricciones sobre relaciones de FK activas al borrar. Las publicaciones existentes seguirán apuntando a su categoryId y la categoría seguirá listándose en administración con estado "Eliminada" para auditoría.
   - *¿Cómo se protegió la ruta de esta pantalla?* Se anidó la ruta `/admin/categories` dentro de un `<Route element={<AuthGuard />}>` y, dentro de este, se envolvió en un `<Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>`. Esto garantiza que solo los usuarios autenticados con rol `SUPERADMIN` puedan acceder, redirigiendo a los usuarios normales a la vista `/403` ("No tenés permiso").
 
+  ---
+  ## Crear/Editar Publicación
+- El PUT reemplaza el recurso completo (fuentes y hashtags se borran y 
+  recrean, no se mezclan) -- el formulario de edición precarga todos 
+  los campos, no hace un diff parcial.
+- No existe estado "borrador" en el backend -- toda publicación creada 
+  queda PUBLISHED de inmediato. lasdoscaras_draft es solo un autoguardado 
+  local para no perder texto si el usuario cierra la pestaña antes de 
+  enviar, no un draft que el servidor conozca.
+- Editar requiere ser el autor O superadmin -- esto es una verificación 
+  de "ownership del recurso", distinta de RoleGuard (que solo valida 
+  rol, sin saber quién es dueño de qué). Por eso /views/:id/edit usa 
+  AuthGuard a nivel de ruta + un chequeo manual (user.id === 
+  view.authorId || role === 'SUPERADMIN') una vez que la vista carga, 
+  con mensaje inline si no corresponde en vez de redirect.
+
 ## Admin — Moderación

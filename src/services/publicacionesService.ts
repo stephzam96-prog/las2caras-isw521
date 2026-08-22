@@ -1,5 +1,5 @@
 import { httpClient } from './httpClient';
-import type { ReactionType, SideType, View } from '../types';
+import type { CreateViewInput, ReactionType, SideType, UpdateViewInput, View } from '../types';
 
 export type ViewSort = 'recent' | 'likes' | 'dislikes';
 
@@ -78,5 +78,17 @@ export const publicacionesService = {
   },
   publishView(id: string): Promise<GetViewResponse> {
     return httpClient.patch<GetViewResponse>(`/views/${id}/publish`);
+  },
+  // Se publica de inmediato (status default PUBLISHED en el backend) --
+  // no existe un estado "borrador" del lado del servidor.
+  createView(input: CreateViewInput): Promise<GetViewResponse> {
+    return httpClient.post<GetViewResponse>('/views', input);
+  },
+  // OJO: es un reemplazo completo, no un patch parcial. El backend borra
+  // todas las fuentes viejas de ambos lados y crea las nuevas, y los
+  // hashtags se reemplazan con "set" (no se mezclan) -- verificado en
+  // views.service.js. El formulario tiene que mandar el estado completo.
+  updateView(id: string, input: UpdateViewInput): Promise<GetViewResponse> {
+    return httpClient.put<GetViewResponse>(`/views/${id}`, input);
   },
 };
