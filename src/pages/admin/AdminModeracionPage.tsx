@@ -42,8 +42,12 @@ export default function AdminModeracionPage() {
       const response = targetView.status === 'PUBLISHED'
         ? await publicacionesService.unpublishView(targetView.id)
         : await publicacionesService.publishView(targetView.id);
-      
-      setViews((prev) => prev.map((v) => (v.id === targetView.id ? response.view : v)));
+
+      // OJO: unpublish/publish devuelven el PoliticalView SIN relaciones
+      // (sin sides/category/author) -- no reemplazamos la vista entera con
+      // la respuesta (rompería el .find sobre .sides al renderizar), solo
+      // actualizamos el campo status que sí es confiable.
+      setViews((prev) => prev.map((v) => (v.id === targetView.id ? { ...v, status: response.view.status } : v)));
     } catch (err) {
       console.error('Error al cambiar el estado de publicación', err);
       alert('No se pudo cambiar el estado de publicación.');
@@ -79,9 +83,6 @@ export default function AdminModeracionPage() {
             </tr>
           </thead>
           <tbody>
-            {/* TODO (equipo): esto ya mapea sobre `views`, pero como sigue
-                siendo el placeholder vacio de arriba, no muestra nada
-                hasta que conectes el fetch real. */}
             {views.map((view) => {
               const sideA = view.sides.find((s) => s.type === 'SIDE') ?? view.sides[0];
               const badge = STATUS_LABEL[view.status];
