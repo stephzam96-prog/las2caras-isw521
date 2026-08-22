@@ -1,5 +1,5 @@
 import { httpClient } from './httpClient';
-import type { CreateViewInput, ReactionType, SideType, UpdateViewInput, View } from '../types';
+import type { CreateViewInput, ReactionType, SideType, UpdateViewInput, View, ViewStatus } from '../types';
 
 export type ViewSort = 'recent' | 'likes' | 'dislikes';
 
@@ -36,6 +36,21 @@ export interface SideReactionResponse {
 
 export interface FavoriteResponse {
   isFavorite: boolean;
+}
+
+export interface AdminListViewsParams {
+  status?: ViewStatus;
+  page?: number;
+  limit?: number;
+}
+
+function buildAdminQuery(params: AdminListViewsParams): string {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.page) query.set('page', String(params.page));
+  if (params.limit) query.set('limit', String(params.limit));
+  const qs = query.toString();
+  return qs ? `?${qs}` : '';
 }
 
 export function toSideLetter(type: SideType): ViewSideLetter {
@@ -100,5 +115,11 @@ export const publicacionesService = {
   },
   unfavoriteView(id: string): Promise<FavoriteResponse> {
     return httpClient.delete<FavoriteResponse>(`/views/${id}/favorite`);
+  },
+  // --- Admin (SUPERADMIN) ---
+  // A diferencia de listViews() (publico), sin "status" trae publicadas Y
+  // despublicadas juntas -- no fuerza PUBLISHED como el endpoint publico.
+  adminListViews(params: AdminListViewsParams = {}): Promise<ListViewsResponse> {
+    return httpClient.get<ListViewsResponse>(`/admin/views${buildAdminQuery(params)}`);
   },
 };

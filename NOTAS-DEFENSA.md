@@ -126,4 +126,19 @@ Formato sugerido por entrada:
   mientras tanto, ese GET puntual da 404 y esa tarjeta se omite en 
   silencio, en vez de romper toda la sección de favoritos.
 ---
+## Admin — Usuarios
+- 3 estados reales (PENDING, ACTIVE, SUSPENDED), no un simple activo/
+  baneado -- reflejado con badges distintos en la tabla.
+- El backend no impide que un superadmin se banee a sí mismo (verificado 
+  en banUser, sin ninguna restricción). Se agregó una guarda del lado 
+  del cliente: el botón "Banear" está deshabilitado en la fila del 
+  usuario actualmente logueado.
+
 ## Admin — Moderación
+- GET /admin/views no filtra por status por defecto (a diferencia del 
+  GET /views público, que siempre fuerza PUBLISHED) -- trae publicadas 
+  y despublicadas juntas, permitiendo re-publicar contenido despublicado.
+- Se usa una tabla compacta en vez de GridPublicaciones/TarjetaPublicacion, 
+  porque esta pantalla necesita mostrar muchos registros con acciones 
+  por fila, no tarjetas grandes -- mismo criterio que AdminCategoriasPage.
+
