@@ -38,6 +38,17 @@ export interface FavoriteResponse {
   isFavorite: boolean;
 }
 
+// PATCH /publish y /unpublish devuelven el PoliticalView SIN relaciones
+// (sin sides/category/author/hashtags/totalLikes/isFavorite) -- verificado
+// contra la API real, a diferencia de GET/POST/PUT que si devuelven el
+// View completo. No usar esta respuesta para reemplazar una vista entera
+// en el estado local (rompe cualquier .find sobre .sides) -- solo sirve
+// para leer el nuevo `status`. Ver DetallePublicacionPage.tsx, que
+// actualiza unicamente ese campo.
+export interface PublishActionResponse {
+  view: Pick<View, 'id' | 'categoryId' | 'authorId' | 'status' | 'createdAt' | 'updatedAt'>;
+}
+
 export interface AdminListViewsParams {
   status?: ViewStatus;
   page?: number;
@@ -92,11 +103,11 @@ export const publicacionesService = {
   // Ambas requieren rol SUPERADMIN en el backend -- ni siquiera el autor
   // puede despublicar/republicar su propia publicacion (verificado contra
   // el codigo fuente real: requireRole('SUPERADMIN') en la ruta).
-  unpublishView(id: string): Promise<GetViewResponse> {
-    return httpClient.patch<GetViewResponse>(`/views/${id}/unpublish`);
+  unpublishView(id: string): Promise<PublishActionResponse> {
+    return httpClient.patch<PublishActionResponse>(`/views/${id}/unpublish`);
   },
-  publishView(id: string): Promise<GetViewResponse> {
-    return httpClient.patch<GetViewResponse>(`/views/${id}/publish`);
+  publishView(id: string): Promise<PublishActionResponse> {
+    return httpClient.patch<PublishActionResponse>(`/views/${id}/publish`);
   },
   // Se publica de inmediato (status default PUBLISHED en el backend) --
   // no existe un estado "borrador" del lado del servidor.
