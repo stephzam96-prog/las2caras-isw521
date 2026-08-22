@@ -146,4 +146,14 @@ export const cacheService = {
   clearDraft(): void {
     remove(KEYS.draft);
   },
+
+  // Mirror simple de GET /users/me/favorites -- se llena/actualiza recien
+  // al visitar /profile (ver nota en CLAUDE.md sobre por que no esta
+  // enganchado al login todavia).
+  getFavoriteIds(): string[] {
+    return read<string[]>(KEYS.favorites) ?? [];
+  },
+  setFavoriteIds(ids: string[]): void {
+    write(KEYS.favorites, ids);
+  },
 };

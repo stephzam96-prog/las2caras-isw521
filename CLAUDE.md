@@ -98,6 +98,21 @@ Todo acceso a localStorage pasa por un único `CacheService` — nunca
 stale-while-revalidate: mostrar lo cacheado de inmediato, refrescar en
 segundo plano.
 
+**`lasdoscaras_favorites` — decisión de alcance consciente (no es un olvido):**
+el texto de la tabla dice "sync con API al login", pero hoy (Perfil de Usuario)
+se implementó la versión simple: se cargan desde `GET /api/users/me/favorites`
+recién al visitar `/profile`, no en el login. Motivo: `TarjetaPublicacion` no
+muestra ningún ícono de "es favorito" en ninguna pantalla todavía (Tablero,
+Categoría, Búsqueda, Perfil de Autor, Detalle) — verificado con grep en todo
+`src/`, `view.isFavorite` existe en el tipo pero no se lee en ningún lado. Sin
+esa UI, sincronizar en el login no tendría ningún consumidor hasta que se
+visite `/profile`, así que no se justificaba tocar `AuthContext.tsx` (un
+archivo compartido y ya probado) para este alcance. **Si en el futuro se
+agrega el ícono de favorito a `TarjetaPublicacion`,** ahí sí hay que mover la
+sincronización al flujo de login (en `AuthContext.tsx`, junto a la carga de
+sesión), para que el ícono tenga el dato disponible apenas carga cualquier
+pantalla con tarjetas.
+
 ## Rutas de la aplicación
 
 | Ruta | Pantalla | Acceso |

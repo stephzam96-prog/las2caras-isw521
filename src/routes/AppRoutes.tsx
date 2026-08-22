@@ -10,6 +10,7 @@ import BusquedaPage from '../pages/busqueda/BusquedaPage';
 import DetallePublicacionPage from '../pages/publicacion/DetallePublicacionPage';
 import CrearEditarPublicacionPage from '../pages/publicacion/CrearEditarPublicacionPage';
 import PerfilAutorPage from '../pages/perfil/PerfilAutorPage';
+import PerfilUsuarioPage from '../pages/perfil/PerfilUsuarioPage';
 import AdminCategoriasPage from '../pages/admin/AdminCategoriasPage';
 import { RoleGuard } from './RoleGuard';
 
@@ -28,7 +29,7 @@ export function AppRoutes() {
       <Route path="/authors/:id" element={<PerfilAutorPage />} />
 
       <Route element={<AuthGuard />}>
-        {/* futuras rutas autenticadas: /profile, etc. */}
+        <Route path="/profile" element={<PerfilUsuarioPage />} />
         <Route path="/views/new" element={<CrearEditarPublicacionPage />} />
         <Route path="/views/:id/edit" element={<CrearEditarPublicacionPage />} />
         <Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>
