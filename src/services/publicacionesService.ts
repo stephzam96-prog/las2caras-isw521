@@ -34,6 +34,10 @@ export interface SideReactionResponse {
   myReaction: ReactionType | null;
 }
 
+export interface FavoriteResponse {
+  isFavorite: boolean;
+}
+
 export function toSideLetter(type: SideType): ViewSideLetter {
   return type === 'SIDE' ? 'a' : 'b';
 }
@@ -90,5 +94,11 @@ export const publicacionesService = {
   // views.service.js. El formulario tiene que mandar el estado completo.
   updateView(id: string, input: UpdateViewInput): Promise<GetViewResponse> {
     return httpClient.put<GetViewResponse>(`/views/${id}`, input);
+  },
+  favoriteView(id: string): Promise<FavoriteResponse> {
+    return httpClient.post<FavoriteResponse>(`/views/${id}/favorite`);
+  },
+  unfavoriteView(id: string): Promise<FavoriteResponse> {
+    return httpClient.delete<FavoriteResponse>(`/views/${id}/favorite`);
   },
 };

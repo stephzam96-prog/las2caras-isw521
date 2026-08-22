@@ -102,4 +102,28 @@ Formato sugerido por entrada:
   view.authorId || role === 'SUPERADMIN') una vez que la vista carga, 
   con mensaje inline si no corresponde en vez de redirect.
 
+  ---
+  ## Perfil de Usuario — Favoritos
+- CLAUDE.md describe sincronizar favoritos al login para mostrar el 
+  ícono en cualquier tarjeta. Decidimos NO implementar eso todavía 
+  (verificado con grep: TarjetaPublicacion no muestra ese ícono en 
+  ningún lado del proyecto hoy, ni Tablero, Categoría, Búsqueda, 
+  Autor o Detalle) -- se carga la lista de favoritos solo al visitar 
+  /profile. Si más adelante se agrega el ícono en las tarjetas, ahí 
+  correspondería mover la carga al login.
+- Se agregó "Quitar de favoritos" en esta pantalla (no estaba en el 
+  pedido original, pero una lista sin poder sacar elementos sería una 
+  experiencia incompleta) -- lista propia liviana, no GridPublicaciones, 
+  mismo criterio usado para Lado A/B en Detalle.
+- El API no soporta editar datos del perfil (nombre, email, contraseña) 
+  ni avatar -- verificado en users.service.js completo, solo expone 
+  acciones de superadmin sobre otros usuarios. La pantalla muestra los 
+  datos de solo lectura.
+
+
+  - Se usó Promise.allSettled (no Promise.all) al traer los datos 
+  completos de cada favorito -- si un favorito viejo fue despublicado 
+  mientras tanto, ese GET puntual da 404 y esa tarjeta se omite en 
+  silencio, en vez de romper toda la sección de favoritos.
+---
 ## Admin — Moderación
