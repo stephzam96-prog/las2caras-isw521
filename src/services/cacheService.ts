@@ -1,7 +1,7 @@
 // Único módulo del proyecto que llama localStorage.getItem/setItem directo.
 // Todo lo demás (context, hooks, páginas) pasa por acá.
 
-import type { Category, Hashtag, User } from '../types';
+import type { Category, Hashtag, SourceType, User } from '../types';
 import type { ViewSort } from './publicacionesService';
 
 export interface StoredAuth {
@@ -22,6 +22,23 @@ export interface HistoryEntry {
   title: string; // titulo del Lado A
   categoryName: string;
   viewedAt: string; // ISO
+}
+
+// Borrador del formulario de CREAR publicación (no se usa en modo edición
+// -- ver nota en CrearEditarPublicacionPage.tsx). Forma laxa a propósito:
+// mientras se completa el formulario los campos pueden estar vacíos, no
+// tiene que cumplir las validaciones de CreateViewInput.
+export interface DraftSideForm {
+  title: string;
+  description: string;
+  sources: { type: SourceType; url: string; label: string }[];
+}
+
+export interface DraftPublicacion {
+  categoryId: string;
+  side: DraftSideForm;
+  counterpart: DraftSideForm;
+  hashtags: string[];
 }
 
 const KEYS = {
@@ -118,5 +135,15 @@ export const cacheService = {
     const withoutDuplicate = cacheService.getHistory().filter((h) => h.id !== entry.id);
     const updated = [{ ...entry, viewedAt: new Date().toISOString() }, ...withoutDuplicate].slice(0, MAX_HISTORY);
     write(KEYS.history, updated);
+  },
+
+  getDraft(): DraftPublicacion | null {
+    return read<DraftPublicacion>(KEYS.draft);
+  },
+  setDraft(draft: DraftPublicacion): void {
+    write(KEYS.draft, draft);
+  },
+  clearDraft(): void {
+    remove(KEYS.draft);
   },
 };
