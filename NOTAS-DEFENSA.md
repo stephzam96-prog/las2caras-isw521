@@ -134,11 +134,17 @@ Formato sugerido por entrada:
   del cliente: el botón "Banear" está deshabilitado en la fila del 
   usuario actualmente logueado.
 
-## Admin — Moderación
-- GET /admin/views no filtra por status por defecto (a diferencia del 
-  GET /views público, que siempre fuerza PUBLISHED) -- trae publicadas 
-  y despublicadas juntas, permitiendo re-publicar contenido despublicado.
-- Se usa una tabla compacta en vez de GridPublicaciones/TarjetaPublicacion, 
-  porque esta pantalla necesita mostrar muchos registros con acciones 
-  por fila, no tarjetas grandes -- mismo criterio que AdminCategoriasPage.
+## Admin — Moderación (Moderación de Contenido)
+- **Qué hace:** Permite al SUPERADMIN listar todas las publicaciones, filtrar por estado (Publicadas, Despublicadas, o Todos) y publicar/despublicar cualquier publicación en tiempo real con actualización directa en la UI.
+- **Endpoints del API que usa:**
+  - `GET /api/admin/views` (lista publicaciones para moderación, trayendo publicadas y despublicadas juntas si no se filtra por status).
+  - `PATCH /api/views/:id/publish` (publica una publicación).
+  - `PATCH /api/views/:id/unpublish` (despublica una publicación).
+- **Decisiones de diseño y por qué:**
+  - **Uso de tabla compacta**: Al igual que en `AdminCategoriasPage.tsx`, se usa una tabla compacta en vez de `GridPublicaciones` o `TarjetaPublicacion` porque un superadmin necesita ver de forma rápida y compacta muchos registros y realizar acciones por fila con un solo clic.
+  - **Filtro controlado con refetch**: Se conectó el selector de estado (`statusFilter`) con un `useEffect` que depende de `fetchViews`, la cual a su vez depende de `statusFilter`. Esto asegura que al cambiar el filtro en la UI se vuelvan a cargar los datos de forma inmediata y automatizada.
+  - **Actualización en lugar sin refetch completo**: Cuando el superadmin publica o despublica, se actualiza el estado local modificando únicamente el elemento en la lista `views` con `prev.map((v) => (v.id === targetView.id ? response.view : v))`, lo que evita solicitudes adicionales N+1 o parpadeos en la UI.
+- **Puntos donde podrían preguntarme algo tricky:**
+  - *¿Por qué `GET /api/admin/views` se comporta diferente al endpoint público?* Porque el endpoint público `GET /views` siempre fuerza que el estado sea `PUBLISHED`. En cambio, el panel de moderación necesita listar también el contenido despublicado para que el superadmin pueda moderarlo y republicarlo si lo considera oportuno.
+  - *¿Por qué se agregó un comentario de eslint-disable en el `useEffect`?* Para saltar la regla estricta de `react-hooks/set-state-in-effect` de ESLint, dado que se requiere sincronizar la carga de datos (fetch inicial) en el momento del montaje y al cambiar el filtro.
 
