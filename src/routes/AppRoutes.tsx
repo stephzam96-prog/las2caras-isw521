@@ -12,6 +12,7 @@ import CrearEditarPublicacionPage from '../pages/publicacion/CrearEditarPublicac
 import PerfilAutorPage from '../pages/perfil/PerfilAutorPage';
 import PerfilUsuarioPage from '../pages/perfil/PerfilUsuarioPage';
 import AdminCategoriasPage from '../pages/admin/AdminCategoriasPage';
+import AdminUsuariosPage from '../pages/admin/AdminUsuariosPage';
 import { RoleGuard } from './RoleGuard';
 
 // Rutas de auth y tablero ya armadas acá; el resto (categorías, búsqueda,
@@ -34,6 +35,7 @@ export function AppRoutes() {
         <Route path="/views/:id/edit" element={<CrearEditarPublicacionPage />} />
         <Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>
           <Route path="/admin/categories" element={<AdminCategoriasPage />} />
+          <Route path="/admin/users" element={<AdminUsuariosPage />} />
         </Route>
       </Route>
 
