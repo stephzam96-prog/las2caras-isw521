@@ -73,7 +73,7 @@ export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
 function LadoBloque({ side, label }: { side: ViewSide; label: string }) {
   return (
     <div className="rounded-md bg-gray-50 p-3 dark:bg-gray-900">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{label}</p>
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
       <h3 className="mb-1 font-semibold text-gray-900 dark:text-gray-100">{side.title}</h3>
       <p className="line-clamp-3 text-sm text-gray-600 dark:text-gray-400">{side.description}</p>
     </div>

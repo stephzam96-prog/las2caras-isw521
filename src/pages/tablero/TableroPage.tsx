@@ -223,6 +223,10 @@ export default function TableroPage() {
               <input
                 id="filtro-hashtag"
                 type="text"
+                role="combobox"
+                aria-expanded={isHashtagDropdownOpen && hashtagSuggestions.length > 0}
+                aria-controls="filtro-hashtag-listbox"
+                aria-autocomplete="list"
                 placeholder="Buscar hashtag…"
                 value={hashtagQuery}
                 onChange={(e) => setHashtagQuery(e.target.value)}
@@ -230,11 +234,17 @@ export default function TableroPage() {
                 className="w-48 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
               />
               {isHashtagDropdownOpen && hashtagSuggestions.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <ul
+                  id="filtro-hashtag-listbox"
+                  role="listbox"
+                  className="absolute z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
                   {hashtagSuggestions.map((h) => (
-                    <li key={h.id}>
+                    <li key={h.id} role="presentation">
                       <button
                         type="button"
+                        role="option"
+                        aria-selected={false}
                         onMouseDown={() => handleSelectHashtag(h)}
                         className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
