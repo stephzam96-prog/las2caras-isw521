@@ -2,10 +2,13 @@ import { useEffect, useRef, useState, type FormEvent, type MouseEvent as ReactMo
 import type { Category } from '../../types';
 import { categoriasService } from '../../services/categoriasService';
 import { ApiError } from '../../services/httpClient';
+import { useToast } from '../../hooks/useToast';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 export default function AdminCategoriasPage() {
+  const { showToast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
@@ -133,25 +136,24 @@ export default function AdminCategoriasPage() {
     }
   }
 
-  // --- YA ARMADO: confirmacion antes de borrar. La API NO valida si la
-  // categoria tiene publicaciones asociadas, asi que esta es la unica red
-  // de seguridad -- no debe depender de que alguien se acuerde de
-  // agregarla despues. ---
-  async function handleDelete(category: Category) {
-    const confirmed = window.confirm(
-      `¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer, y las publicaciones que ya la usan van a seguir apuntando a ella.`,
-    );
-    if (!confirmed) return;
+  // Confirmación antes de borrar vía ConfirmModal (antes usaba
+  // window.confirm). La API NO valida si la categoría tiene publicaciones
+  // asociadas, así que esta es la única red de seguridad -- no debe
+  // depender de que alguien se acuerde de agregarla después.
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
+  async function handleDelete(category: Category) {
+    setDeleteTarget(null);
     try {
       await categoriasService.deleteCategory(category.id);
       // Soft-delete: actualizamos la categoría en la lista local marcándola con deletedAt
       setCategories((prev) =>
         prev.map((c) => (c.id === category.id ? { ...c, deletedAt: new Date().toISOString() } : c)),
       );
+      showToast(`Categoría "${category.name}" eliminada.`, 'success');
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Ocurrió un error al eliminar la categoría.';
-      alert(message);
+      showToast(message, 'error');
     }
   }
 
@@ -206,7 +208,11 @@ export default function AdminCategoriasPage() {
                   >
                     Editar
                   </button>
-                  <button type="button" onClick={() => handleDelete(category)} className="text-red-600 hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(category)}
+                    className="text-red-600 hover:underline"
+                  >
                     Eliminar
                   </button>
                 </td>
@@ -258,6 +264,20 @@ export default function AdminCategoriasPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        title="Eliminar categoría"
+        message={
+          deleteTarget
+            ? `¿Eliminar la categoría "${deleteTarget.name}"? Esta acción no se puede deshacer, y las publicaciones que ya la usan van a seguir apuntando a ella.`
+            : ''
+        }
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
