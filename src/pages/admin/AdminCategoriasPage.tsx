@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import type { Category } from '../../types';
 import { categoriasService } from '../../services/categoriasService';
 import { ApiError } from '../../services/httpClient';
@@ -28,14 +28,23 @@ export default function AdminCategoriasPage() {
   const [nameInput, setNameInput] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  function handleOpenCreate() {
+  // Accesibilidad del modal: guardamos qué botón lo abrió para devolverle el
+  // foco al cerrar, una ref al input para mandarle el foco apenas se abre, y
+  // una ref al contenedor del diálogo para el focus trap (Tab/Shift+Tab).
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  function handleOpenCreate(event: ReactMouseEvent<HTMLButtonElement>) {
+    triggerRef.current = event.currentTarget;
     setEditingCategory(null);
     setNameInput('');
     setFormError(null);
     setIsModalOpen(true);
   }
 
-  function handleOpenEdit(category: Category) {
+  function handleOpenEdit(event: ReactMouseEvent<HTMLButtonElement>, category: Category) {
+    triggerRef.current = event.currentTarget;
     setEditingCategory(category);
     setNameInput(category.name);
     setFormError(null);
@@ -44,7 +53,53 @@ export default function AdminCategoriasPage() {
 
   function handleCloseModal() {
     setIsModalOpen(false);
+    triggerRef.current?.focus();
   }
+
+  // Foco inicial al input cuando se abre el modal.
+  useEffect(() => {
+    if (isModalOpen) nameInputRef.current?.focus();
+  }, [isModalOpen]);
+
+  // Cerrar con Escape + focus trap: Tab desde el último elemento
+  // focuseable del modal vuelve al primero, y Shift+Tab desde el primero
+  // vuelve al último, para que el foco nunca se escape a la tabla de fondo.
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    function getFocusableElements(): HTMLElement[] {
+      if (!modalRef.current) return [];
+      return Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        handleCloseModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -146,7 +201,7 @@ export default function AdminCategoriasPage() {
                 <td className="py-2">
                   <button
                     type="button"
-                    onClick={() => handleOpenEdit(category)}
+                    onClick={(event) => handleOpenEdit(event, category)}
                     className="mr-3 text-blue-600 hover:underline"
                   >
                     Editar
@@ -165,12 +220,19 @@ export default function AdminCategoriasPage() {
           real es TODO (ver handleSubmit arriba). --- */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-lg bg-white p-4 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="categoria-modal-title"
+            className="w-full max-w-sm rounded-lg bg-white p-4 dark:bg-gray-800"
+          >
+            <h2 id="categoria-modal-title" className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               {editingCategory ? 'Editar categoría' : 'Nueva categoría'}
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input
+                ref={nameInputRef}
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
