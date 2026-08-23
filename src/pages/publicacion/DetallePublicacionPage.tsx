@@ -157,7 +157,11 @@ function PublicacionDetalle({ view }: { view: View }) {
         )}
       </header>
 
-      {publishError && <p className="mb-3 text-sm text-red-600">{publishError}</p>}
+      {publishError && (
+        <p role="alert" className="mb-3 text-sm text-red-600">
+          {publishError}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {sideA && (
@@ -204,13 +208,13 @@ function LadoDetalle({
 }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{label}</p>
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
       <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">{side.title}</h2>
       <p className="mb-4 whitespace-pre-wrap text-gray-700 dark:text-gray-300">{side.description}</p>
 
       {side.sources.length > 0 && (
         <div className="mb-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Fuentes
           </p>
           <ul className="flex flex-col gap-1">
@@ -352,12 +356,14 @@ function SeccionComentarios({ viewId }: { viewId: string }) {
         >
           <input
             type="text"
+            aria-label="Título del hilo (opcional)"
             value={newThreadTitle}
             onChange={(e) => setNewThreadTitle(e.target.value)}
             placeholder="Título del hilo (opcional)"
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
           />
           <textarea
+            aria-label="Escribí un comentario"
             value={newThreadContent}
             onChange={(e) => setNewThreadContent(e.target.value)}
             placeholder="Escribí un comentario…"
@@ -437,6 +443,7 @@ function Hilo({
               <div className="mt-2 flex gap-2">
                 <input
                   type="text"
+                  aria-label="Escribí una respuesta"
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
                   placeholder="Escribí una respuesta…"
@@ -473,7 +480,7 @@ function ComentarioLinea({ comment }: { comment: Comment }) {
     <div>
       <p className="text-sm">
         <span className="font-semibold text-gray-900 dark:text-gray-100">{comment.user?.name ?? 'Usuario'}</span>{' '}
-        <span className="text-gray-400 dark:text-gray-500">
+        <span className="text-gray-500 dark:text-gray-400">
           · {new Date(comment.createdAt).toLocaleDateString('es-AR')}
         </span>
       </p>

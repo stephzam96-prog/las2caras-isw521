@@ -234,6 +234,7 @@ export default function AdminCategoriasPage() {
               <input
                 ref={nameInputRef}
                 type="text"
+                aria-label="Nombre de la categoría"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 placeholder="Nombre de la categoría"

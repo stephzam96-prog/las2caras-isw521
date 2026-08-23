@@ -407,6 +407,10 @@ export default function CrearEditarPublicacionPage() {
             <input
               id="hashtags"
               type="text"
+              role="combobox"
+              aria-expanded={hashtagSuggestions.length > 0}
+              aria-controls="hashtags-listbox"
+              aria-autocomplete="list"
               value={hashtagQuery}
               onChange={(e) => setHashtagQuery(e.target.value)}
               onKeyDown={handleHashtagKeyDown}
@@ -415,11 +419,17 @@ export default function CrearEditarPublicacionPage() {
               className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
             />
             {hashtagSuggestions.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+              <ul
+                id="hashtags-listbox"
+                role="listbox"
+                className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              >
                 {hashtagSuggestions.map((h) => (
-                  <li key={h.id}>
+                  <li key={h.id} role="presentation">
                     <button
                       type="button"
+                      role="option"
+                      aria-selected={false}
                       onMouseDown={() => addHashtag(h.name)}
                       className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
@@ -433,13 +443,17 @@ export default function CrearEditarPublicacionPage() {
         </div>
 
         {validationMessages.length > 0 && (
-          <ul className="list-disc pl-5 text-sm text-red-600">
+          <ul role="alert" className="list-disc pl-5 text-sm text-red-600">
             {validationMessages.map((msg) => (
               <li key={msg}>{msg}</li>
             ))}
           </ul>
         )}
-        {formError && <p className="text-sm text-red-600">{formError}</p>}
+        {formError && (
+          <p role="alert" className="text-sm text-red-600">
+            {formError}
+          </p>
+        )}
 
         <button
           type="submit"
