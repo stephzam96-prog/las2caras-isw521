@@ -91,6 +91,7 @@ export default function BusquedaPage() {
 
       <input
         type="text"
+        aria-label="Buscar publicaciones, categorías, hashtags, autores"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar publicaciones, categorías, hashtags, autores…"

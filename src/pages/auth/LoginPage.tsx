@@ -84,13 +84,17 @@ export default function LoginPage() {
         </div>
 
         {validationMessages.length > 0 && (
-          <ul className="list-disc pl-5 text-sm text-red-600">
+          <ul role="alert" className="list-disc pl-5 text-sm text-red-600">
             {validationMessages.map((msg) => (
               <li key={msg}>{msg}</li>
             ))}
           </ul>
         )}
-        {formError && <p className="text-sm text-red-600">{formError}</p>}
+        {formError && (
+          <p role="alert" className="text-sm text-red-600">
+            {formError}
+          </p>
+        )}
 
         <button
           type="submit"
