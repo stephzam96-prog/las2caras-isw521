@@ -148,5 +148,10 @@ Formato sugerido por entrada:
 - **Puntos donde podrían preguntarme algo tricky:**
   - *¿Por qué `GET /api/admin/views` se comporta diferente al endpoint público?* Porque el endpoint público `GET /views` siempre fuerza que el estado sea `PUBLISHED`. En cambio, el panel de moderación necesita listar también el contenido despublicado para que el superadmin pueda moderarlo y republicarlo si lo considera oportuno.
   - *¿Por qué se agregó un comentario de eslint-disable en el `useEffect`?* Para saltar la regla estricta de `react-hooks/set-state-in-effect` de ESLint, dado que se requiere sincronizar la carga de datos (fetch inicial) en el momento del montaje y al cambiar el filtro.
+
+---
+## Accesibilidad (WCAG 2.1 AA)
+- Auditoría completa hecha sobre src/pages/ y src/components/, encontró y corrigió: modal sin role="dialog"/foco/Escape (Admin-Categorías), formulario más largo de la app sin labels asociados (LadoFormulario en Crear/Editar Publicación), trampa de foco en dropdown de hashtags, falta de aria-live en 4 formularios, contraste insuficiente en 4 ubicaciones (patrón text-gray-400 invertido por error), y semántica de combobox en autocompletes.
+- Decisión consciente: el combobox de hashtags no soporta navegación por flechas -- sería cambiar el comportamiento del componente, no solo su accesibilidad. Sigue siendo 100% operable por teclado vía Tab.
   - *¿Por qué `publish`/`unpublish` no se pueden usar como los demás endpoints de `views`?* Porque devuelven un shape distinto y más chico que `GET`/`POST`/`PUT /views`. Hay que tratarlos como una señal de éxito + el nuevo `status`, nunca como reemplazo completo de una vista en el estado local -- si a futuro se necesita mostrar más datos tras publicar/despublicar, hace falta un GET adicional o pedirle al backend que incluya las relaciones en esa respuesta.
 
