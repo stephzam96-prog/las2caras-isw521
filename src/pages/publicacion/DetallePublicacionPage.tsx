@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import type { Comment, CommentThread, ReactionType, View, ViewSide } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useSideReactions } from '../../hooks/useSideReactions';
+import { useFavorite } from '../../hooks/useFavorite';
 import { useShare } from '../../hooks/useShare';
 import { publicacionesService } from '../../services/publicacionesService';
 import { comentariosService } from '../../services/comentariosService';
@@ -83,6 +84,7 @@ function PublicacionDetalle({ view }: { view: View }) {
   // Misma logica de reaccion que TarjetaPublicacion (Tablero/Categoria),
   // reutilizada via el hook para no duplicar el POST-y-merge.
   const { sides, react, reactingSideId } = useSideReactions(view);
+  const { isFavorite, toggleFavorite, isToggling: isTogglingFavorite } = useFavorite(view);
   const { share } = useShare();
 
   const sideA = sides.find((s) => s.type === 'SIDE');
@@ -136,6 +138,24 @@ function PublicacionDetalle({ view }: { view: View }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Favorito: solo si hay sesion, mismo criterio que TarjetaPublicacion. */}
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              disabled={isTogglingFavorite}
+              aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              aria-pressed={isFavorite}
+              className={`rounded-md border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
+                isFavorite
+                  ? 'border-red-300 text-red-600 dark:border-red-800 dark:text-red-400'
+                  : 'border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-400'
+              }`}
+            >
+              {isFavorite ? '♥ Favorito' : '♡ Favorito'}
+            </button>
+          )}
+
           {/* Compartir: siempre visible, no depende de ser autor/superadmin. */}
           <button
             type="button"

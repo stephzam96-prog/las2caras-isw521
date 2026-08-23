@@ -200,3 +200,15 @@ Formato sugerido por entrada:
   - *¿Qué pasa si falla el toggle de favorito?* Se revierte el estado optimista del corazón (mismo patrón que like/dislike en `useSideReactions`), sin recargar la tarjeta ni interrumpir la pantalla.
   - *¿Por qué el botón de compartir en Detalle no depende de ser autor/superadmin?* Porque compartir es una acción pública -- cualquiera que vea la publicación (incluso sin sesión) debería poder compartirla, a diferencia de Editar/Publicar que sí son acciones de dueño/admin.
 
+
+---
+## Contraseñas — UX
+- El indicador de fortaleza es puramente visual/informativo, no 
+  bloqueante. El único requisito real de submit sigue siendo el 
+  mínimo de 8 caracteres que exige el backend -- se evitó inventar 
+  criterios (símbolos, mayúsculas obligatorias) que el servidor no 
+  pide, para no generar una expectativa inconsistente con lo que el 
+  sistema realmente acepta.
+- PasswordInput.tsx es un componente reutilizable, usado en los 3 
+  campos de contraseña de la app (Login, Registro, Confirmar 
+  contraseña).
