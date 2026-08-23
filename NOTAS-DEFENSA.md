@@ -176,3 +176,16 @@ Formato sugerido por entrada:
 - Decisión consciente: el combobox de hashtags no soporta navegación por flechas -- sería cambiar el comportamiento del componente, no solo su accesibilidad. Sigue siendo 100% operable por teclado vía Tab.
   - *¿Por qué `publish`/`unpublish` no se pueden usar como los demás endpoints de `views`?* Porque devuelven un shape distinto y más chico que `GET`/`POST`/`PUT /views`. Hay que tratarlos como una señal de éxito + el nuevo `status`, nunca como reemplazo completo de una vista en el estado local -- si a futuro se necesita mostrar más datos tras publicar/despublicar, hace falta un GET adicional o pedirle al backend que incluya las relaciones en esa respuesta.
 
+  ---
+  ## Sistema de Notificaciones y Confirmaciones
+- ToastContext centralizado: role="alert" (aria-live="assertive") solo 
+  para errores -- interrumpe al lector de pantalla porque requiere 
+  atención inmediata. role="status" (aria-live="polite") para éxito/
+  advertencia/info -- no interrumpe la tarea en curso del usuario.
+- ConfirmModal.tsx extrae la lógica de accesibilidad (focus trap, 
+  Escape, foco inicial/retorno) del modal de Admin-Categorías a un 
+  componente reutilizable. Para acciones destructivas, el foco inicial 
+  va al botón "Cancelar" (no "Confirmar") -- convención estándar para 
+  que un Enter accidental no confirme algo irreversible como banear 
+  a un usuario.
+
