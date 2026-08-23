@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { ReactionType, View, ViewSide } from '../../types';
 import { useSideReactions } from '../../hooks/useSideReactions';
+import { useFavorite } from '../../hooks/useFavorite';
+import { useShare } from '../../hooks/useShare';
 
 interface TarjetaPublicacionProps {
   view: View;
@@ -18,21 +20,54 @@ export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
   // La logica de reaccion (POST + merge del estado local) vive en el hook
   // para poder reutilizarla en DetallePublicacionPage sin duplicarla.
   const { sides, react, reactingSideId, isAuthenticated } = useSideReactions(view);
+  const { isFavorite, toggleFavorite, isToggling } = useFavorite(view);
+  const { share } = useShare();
 
   const sideA = sides.find((s) => s.type === 'SIDE');
   const sideB = sides.find((s) => s.type === 'COUNTERPART');
 
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <header className="mb-3 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-        <span className="rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">{view.category.name}</span>
-        <span>
-          por{' '}
-          <Link to={`/authors/${view.author.id}`} className="hover:underline">
-            {view.author.name}
-          </Link>
-        </span>
-        <span>· {new Date(view.createdAt).toLocaleDateString('es-AR')}</span>
+      <header className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">{view.category.name}</span>
+          <span>
+            por{' '}
+            <Link to={`/authors/${view.author.id}`} className="hover:underline">
+              {view.author.name}
+            </Link>
+          </span>
+          <span>· {new Date(view.createdAt).toLocaleDateString('es-AR')}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              disabled={isToggling}
+              aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              aria-pressed={isFavorite}
+              className={`rounded-md p-1.5 disabled:cursor-not-allowed disabled:opacity-60 ${
+                isFavorite
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400'
+              }`}
+            >
+              {isFavorite ? '♥' : '♡'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              const sideATitle = sideA?.title ?? '';
+              void share(`${window.location.origin}/views/${view.id}`, sideATitle);
+            }}
+            aria-label="Compartir publicación"
+            className="rounded-md p-1.5 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400"
+          >
+            🔗
+          </button>
+        </div>
       </header>
 
       <Link to={`/views/${view.id}`} className="mb-3 block">

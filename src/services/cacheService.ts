@@ -149,14 +149,22 @@ export const cacheService = {
     remove(KEYS.draft);
   },
 
-  // Mirror simple de GET /users/me/favorites -- se llena/actualiza recien
-  // al visitar /profile (ver nota en CLAUDE.md sobre por que no esta
-  // enganchado al login todavia).
+  // Mirror de GET /users/me/favorites, sincronizado en AuthContext.tsx al
+  // login y al restaurar sesion (fire-and-forget, no bloquea el render --
+  // mismo patron stale-while-revalidate que categorias/hashtags). El
+  // icono de favorito de TarjetaPublicacion lee de aca, no de
+  // view.isFavorite.
   getFavoriteIds(): string[] {
     return read<string[]>(KEYS.favorites) ?? [];
   },
   setFavoriteIds(ids: string[]): void {
     write(KEYS.favorites, ids);
+  },
+  // Se llama en logout() -- si no se limpia, favoritos de un usuario
+  // podrian quedar visibles para otro que loguee despues en la misma
+  // maquina/navegador compartido.
+  clearFavoriteIds(): void {
+    remove(KEYS.favorites);
   },
 
   // null significa "el usuario nunca eligió" -- en ese caso ThemeToggle

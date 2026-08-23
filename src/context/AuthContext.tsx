@@ -1,8 +1,20 @@
 import { createContext, useEffect, useReducer, useCallback, type ReactNode } from 'react';
 import { authReducer, initialAuthState, type AuthState } from './authReducer';
 import { authService } from '../services/authService';
+import { usuariosService } from '../services/usuariosService';
 import { cacheService } from '../services/cacheService';
 import type { LoginPayload, RegisterPayload } from '../types';
+
+// Sincroniza lasdoscaras_favorites en segundo plano -- fire-and-forget
+// (no bloquea el render, mismo patron stale-while-revalidate que
+// categorias/hashtags). Si falla, simplemente no se actualiza el cache;
+// no rompe el login ni la restauracion de sesion.
+function syncFavorites() {
+  usuariosService
+    .getMyFavoriteIds()
+    .then(({ favorites }) => cacheService.setFavoriteIds(favorites))
+    .catch((err) => console.error('No se pudieron sincronizar los favoritos', err));
+}
 
 interface AuthContextValue extends AuthState {
   isAuthenticated: boolean;
@@ -31,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     dispatch({ type: 'RESTORE_SESSION', payload: stored });
+    syncFavorites();
 
     authService
       .getMe()
@@ -60,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { token, user } = await authService.login(payload);
     cacheService.setAuth({ token, user });
     dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
+    syncFavorites();
   }, []);
 
   const register = useCallback(async (payload: RegisterPayload) => {
@@ -72,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     cacheService.clearAuth();
+    cacheService.clearFavoriteIds();
     dispatch({ type: 'LOGOUT' });
   }, []);
 

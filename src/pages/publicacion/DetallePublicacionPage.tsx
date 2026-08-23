@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import type { Comment, CommentThread, ReactionType, View, ViewSide } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useSideReactions } from '../../hooks/useSideReactions';
+import { useShare } from '../../hooks/useShare';
 import { publicacionesService } from '../../services/publicacionesService';
 import { comentariosService } from '../../services/comentariosService';
 import { cacheService } from '../../services/cacheService';
@@ -82,6 +83,7 @@ function PublicacionDetalle({ view }: { view: View }) {
   // Misma logica de reaccion que TarjetaPublicacion (Tablero/Categoria),
   // reutilizada via el hook para no duplicar el POST-y-merge.
   const { sides, react, reactingSideId } = useSideReactions(view);
+  const { share } = useShare();
 
   const sideA = sides.find((s) => s.type === 'SIDE');
   const sideB = sides.find((s) => s.type === 'COUNTERPART');
@@ -133,10 +135,24 @@ function PublicacionDetalle({ view }: { view: View }) {
           )}
         </div>
 
-        {/* Editar: autor o superadmin. Despublicar/Publicar: SOLO superadmin
-            (verificado contra el backend real -- ni el autor puede). */}
-        {(isAuthor || isSuperadmin) && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {/* Compartir: siempre visible, no depende de ser autor/superadmin. */}
+          <button
+            type="button"
+            onClick={() => {
+              const sideATitle = sideA?.title ?? '';
+              void share(`${window.location.origin}/views/${view.id}`, sideATitle);
+            }}
+            aria-label="Compartir publicación"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600"
+          >
+            🔗 Compartir
+          </button>
+
+          {/* Editar: autor o superadmin. Despublicar/Publicar: SOLO superadmin
+              (verificado contra el backend real -- ni el autor puede). */}
+          {(isAuthor || isSuperadmin) && (
+            <>
             <Link
               to={`/views/${view.id}/edit`}
               className="rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600"
@@ -153,8 +169,9 @@ function PublicacionDetalle({ view }: { view: View }) {
                 {currentStatus === 'PUBLISHED' ? 'Despublicar' : 'Publicar'}
               </button>
             )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </header>
 
       {publishError && (
