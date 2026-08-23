@@ -188,7 +188,21 @@ export default function TableroPage() {
           </select>
         </div>
 
-        <div className="relative">
+        <div
+          className="relative"
+          // Cierra el dropdown solo cuando el foco sale por completo del
+          // contenedor (input + lista de sugerencias), no en cada blur del
+          // input -- así un Tab desde el input hacia una sugerencia no lo
+          // cierra con el foco todavía adentro (era una trampa de foco).
+          // relatedTarget es null cuando se hace click afuera en algo no
+          // focuseable, así que el cierre por click-afuera se sigue
+          // comportando igual que antes.
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+              setIsHashtagDropdownOpen(false);
+            }
+          }}
+        >
           <label htmlFor="filtro-hashtag" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Hashtag
           </label>
@@ -213,7 +227,6 @@ export default function TableroPage() {
                 value={hashtagQuery}
                 onChange={(e) => setHashtagQuery(e.target.value)}
                 onFocus={() => setIsHashtagDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setIsHashtagDropdownOpen(false), 150)}
                 className="w-48 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
               />
               {isHashtagDropdownOpen && hashtagSuggestions.length > 0 && (
