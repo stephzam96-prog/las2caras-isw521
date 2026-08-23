@@ -41,6 +41,8 @@ export interface DraftPublicacion {
   hashtags: string[];
 }
 
+export type Theme = 'light' | 'dark';
+
 const KEYS = {
   auth: 'lasdoscaras_auth',
   categories: 'lasdoscaras_categories',
@@ -155,5 +157,14 @@ export const cacheService = {
   },
   setFavoriteIds(ids: string[]): void {
     write(KEYS.favorites, ids);
+  },
+
+  // null significa "el usuario nunca eligió" -- en ese caso ThemeToggle
+  // debe caer al prefers-color-scheme del SO, no asumir 'light'.
+  getTheme(): Theme | null {
+    return read<Theme>(KEYS.theme);
+  },
+  setTheme(theme: Theme): void {
+    write(KEYS.theme, theme);
   },
 };

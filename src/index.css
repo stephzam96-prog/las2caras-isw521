@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+/* Cambia el variant `dark:` de "sigue al SO" (default de Tailwind v4) a
+   "sigue a la clase .dark en un ancestro" -- necesario para que un toggle
+   manual (ver components/ui/ThemeToggle.tsx) pueda anular la preferencia
+   del sistema operativo. Sin esto, agregar/quitar la clase .dark no
+   cambiaría nada visualmente: los `dark:` de toda la app seguirían
+   respondiendo solo a prefers-color-scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
