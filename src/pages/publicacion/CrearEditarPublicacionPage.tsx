@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Category, CreateViewInput, Hashtag, SideInput, SourceType, ViewSide } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -468,6 +468,12 @@ function LadoFormulario({
   onRemoveSource: (index: number) => void;
   onSourceChange: (index: number, patch: Partial<DraftSideForm['sources'][number]>) => void;
 }) {
+  // Prefijo único por instancia (Lado A / Lado B comparten este mismo
+  // componente) para que los id de los campos no choquen entre sí.
+  const uid = useId();
+  const tituloId = `${uid}-titulo`;
+  const descripcionId = `${uid}-descripcion`;
+
   return (
     <fieldset className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
       <legend className="px-1 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -476,8 +482,11 @@ function LadoFormulario({
 
       <div className="flex flex-col gap-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
+          <label htmlFor={tituloId} className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Título
+          </label>
           <input
+            id={tituloId}
             type="text"
             required
             value={value.title}
@@ -487,8 +496,11 @@ function LadoFormulario({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
+          <label htmlFor={descripcionId} className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Descripción
+          </label>
           <textarea
+            id={descripcionId}
             required
             rows={4}
             value={value.description}
@@ -498,11 +510,14 @@ function LadoFormulario({
         </div>
 
         <div>
-          <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Fuentes</p>
-          <div className="flex flex-col gap-2">
+          <p id={`${uid}-fuentes-label`} className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            Fuentes
+          </p>
+          <div role="group" aria-labelledby={`${uid}-fuentes-label`} className="flex flex-col gap-2">
             {value.sources.map((source, index) => (
               <div key={index} className="flex flex-wrap items-center gap-2">
                 <select
+                  aria-label={`Tipo de fuente ${index + 1} (${label})`}
                   value={source.type}
                   onChange={(e) => onSourceChange(index, { type: e.target.value as SourceType })}
                   className="rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
@@ -515,6 +530,7 @@ function LadoFormulario({
                 </select>
                 <input
                   type="url"
+                  aria-label={`URL de la fuente ${index + 1} (${label})`}
                   placeholder="https://..."
                   value={source.url}
                   onChange={(e) => onSourceChange(index, { url: e.target.value })}
@@ -522,6 +538,7 @@ function LadoFormulario({
                 />
                 <input
                   type="text"
+                  aria-label={`Etiqueta de la fuente ${index + 1} (${label}), opcional`}
                   placeholder="Etiqueta (opcional)"
                   value={source.label}
                   onChange={(e) => onSourceChange(index, { label: e.target.value })}
@@ -531,6 +548,7 @@ function LadoFormulario({
                   type="button"
                   onClick={() => onRemoveSource(index)}
                   disabled={value.sources.length <= 1}
+                  aria-label={`Quitar fuente ${index + 1} (${label})`}
                   className="text-sm text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Quitar
@@ -538,7 +556,12 @@ function LadoFormulario({
               </div>
             ))}
           </div>
-          <button type="button" onClick={onAddSource} className="mt-2 text-sm text-blue-600 hover:underline">
+          <button
+            type="button"
+            onClick={onAddSource}
+            aria-label={`Agregar fuente (${label})`}
+            className="mt-2 text-sm text-blue-600 hover:underline"
+          >
             + Agregar fuente
           </button>
         </div>
