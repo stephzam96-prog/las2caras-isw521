@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError } from '../../services/httpClient';
+import PasswordInput from '../../components/ui/PasswordInput';
 
 export default function RegistroPage() {
   const { register, isAuthenticated } = useAuth();
@@ -9,6 +10,7 @@ export default function RegistroPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   // La API agrupa los mensajes de validación bajo "body" (no por campo:
   // ver nota en httpClient.ts), así que se muestran como lista, no atados
   // a un input específico.
@@ -24,8 +26,15 @@ export default function RegistroPage() {
   }
 
   function validateClientSide(): boolean {
+    const errors: string[] = [];
     if (password.length < 8) {
-      setValidationMessages(['La contraseña debe tener al menos 8 caracteres.']);
+      errors.push('La contraseña debe tener al menos 8 caracteres.');
+    }
+    if (password !== confirmPassword) {
+      errors.push('Las contraseñas no coinciden.');
+    }
+    if (errors.length > 0) {
+      setValidationMessages(errors);
       return false;
     }
     return true;
@@ -111,20 +120,25 @@ export default function RegistroPage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Contraseña
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
-          />
-        </div>
+        <PasswordInput
+          id="password"
+          label="Contraseña"
+          value={password}
+          onChange={setPassword}
+          required
+          minLength={8}
+          autoComplete="new-password"
+          showStrength
+        />
+
+        <PasswordInput
+          id="confirmPassword"
+          label="Confirmar contraseña"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          required
+          autoComplete="new-password"
+        />
 
         {validationMessages.length > 0 && (
           <ul role="alert" className="list-disc pl-5 text-sm text-red-600">
