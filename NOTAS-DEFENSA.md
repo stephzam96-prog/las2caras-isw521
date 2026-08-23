@@ -51,6 +51,12 @@ Formato sugerido por entrada:
   - *¿Cómo funciona el debounce de búsqueda?* Evita enviar un request HTTP por cada tecla que presiona el usuario. Espera a que el usuario deje de escribir durante 300ms antes de cambiar el estado de `debouncedQuery` y disparar la llamada al API.
   - *¿Por qué no se usó un `useEffect` simple para inicializar los estados `results` y `status` al borrar el input?* Para evitar infringir la regla de ESLint `react-hooks/set-state-in-effect` que previene actualizaciones de estado síncronas en el cuerpo de un efecto, las cuales provocan re-renderizados en cascada innecesarios. Al ajustar el estado durante el renderizado (cuando `debouncedQuery !== prevQuery`), React descarta el renderizado actual e inmediatamente inicia el nuevo renderizado con los estados actualizados, lo que mejora la eficiencia y limpieza del código.
 
+## Nota de proceso — Categoría
+- El PR original de esta pantalla se mergeó con un mensaje de commit
+  que no coincidía con el código real (afirmaba listado + breadcrumb
+  implementados; ambos seguían como TODO). Detectado en auditoría de
+  consistencia previa a la entrega y corregido antes de la entrega final.
+
   ---
   ## Detalle de Publicación
 - Despublicar es exclusivo de superadmin, el autor NO puede (verificado 
