@@ -70,8 +70,11 @@ export default function AdminModeracionPage() {
 
       {status === 'loading' && <Spinner label="Cargando publicaciones…" />}
       {status === 'error' && <EmptyState title="No pudimos cargar las publicaciones" />}
+      {status === 'success' && views.length === 0 && (
+        <EmptyState title="No hay publicaciones para moderar" message="Probá cambiar el filtro de estado." />
+      )}
 
-      {status === 'success' && (
+      {status === 'success' && views.length > 0 && (
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700">

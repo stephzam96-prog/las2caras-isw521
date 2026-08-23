@@ -170,8 +170,11 @@ export default function AdminCategoriasPage() {
 
       {status === 'loading' && <Spinner label="Cargando categorías…" />}
       {status === 'error' && <EmptyState title="No pudimos cargar las categorías" />}
+      {status === 'success' && categories.length === 0 && (
+        <EmptyState title="Todavía no hay categorías" message="Creá la primera con el botón de arriba." />
+      )}
 
-      {status === 'success' && (
+      {status === 'success' && categories.length > 0 && (
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -181,9 +184,6 @@ export default function AdminCategoriasPage() {
             </tr>
           </thead>
           <tbody>
-            {/* TODO (equipo): esto ya mapea sobre `categories`, pero como
-                sigue siendo el placeholder vacio de arriba, no muestra
-                nada hasta que conectes el fetch real. */}
             {categories.map((category) => (
               <tr key={category.id} className="border-b border-gray-100 dark:border-gray-800">
                 <td className="py-2">{category.name}</td>
