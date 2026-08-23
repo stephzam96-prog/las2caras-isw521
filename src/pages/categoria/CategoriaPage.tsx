@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import type { Category, View } from '../../types';
 import { categoriasService } from '../../services/categoriasService';
-// TODO (equipo): importar publicacionesService acá cuando completes el
-// TODO de más abajo -- ya existe en src/services/publicacionesService.ts,
-// mirá cómo lo usa TableroPage.tsx (src/pages/tablero/TableroPage.tsx)
-// como referencia.
-// import { publicacionesService } from '../../services/publicacionesService';
+import { publicacionesService } from '../../services/publicacionesService';
 import GridPublicaciones from '../../components/publicaciones/GridPublicaciones';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
 type CategoryStatus = 'loading' | 'success' | 'error';
+type ViewsStatus = 'loading' | 'success' | 'empty' | 'error';
 
 export default function CategoriaPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,15 +16,11 @@ export default function CategoriaPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [categoryStatus, setCategoryStatus] = useState<CategoryStatus>('loading');
 
-  // TODO (equipo): reemplazá este placeholder por el estado real de las
-  // publicaciones de esta categoría, por ejemplo:
-  //   const [views, setViews] = useState<View[]>([]);
-  //   const [viewsStatus, setViewsStatus] = useState<'loading' | 'success' | 'empty' | 'error'>('loading');
-  const views: View[] = [];
+  const [views, setViews] = useState<View[]>([]);
+  const [viewsStatus, setViewsStatus] = useState<ViewsStatus>('loading');
 
-  // --- YA ARMADO: trae los datos de la categoría (nombre, etc.) según el
-  // id de la URL. Mismo patrón de loading/error que usa TableroPage.tsx
-  // para categorías/hashtags -- revisalo si tenés dudas de cómo seguir.
+  // Trae los datos de la categoría (nombre, etc.) según el
+  // id de la URL. Mismo patrón de loading/error que usa TableroPage.tsx.
   useEffect(() => {
     if (!id) return;
     setCategoryStatus('loading');
@@ -43,23 +36,23 @@ export default function CategoriaPage() {
       });
   }, [id]);
 
-  // TODO (equipo): traer las publicaciones de esta categoría.
-  //
-  // 1. Descomentá el import de publicacionesService de arriba.
-  // 2. Agregá un useEffect que dependa de [id] y llame:
-  //      publicacionesService.listViews({ category: id, limit: 20 })
-  //    (podés sumar "sort" y paginación con "Cargar más" copiando el
-  //    patrón de fetchViews en TableroPage.tsx -- no es obligatorio para
-  //    esta pantalla, con traer una sola página alcanza).
-  // 3. Guardá el resultado en el estado `views` (reemplazando el
-  //    placeholder de arriba) y manejá los 3 casos: cargando / vacío
-  //    (result.total === 0) / error (catch) -- igual que status ===
-  //    'loading' | 'empty' | 'error' en TableroPage.tsx.
-  //
-  // useEffect(() => {
-  //   if (!id) return;
-  //   ...
-  // }, [id]);
+  // Publicaciones de esta categoría. Fetch
+  // independiente del de la categoría, con sus propios estados
+  // loading/empty/error (mismo patrón que TableroPage.tsx).
+  useEffect(() => {
+    if (!id) return;
+    setViewsStatus('loading');
+    publicacionesService
+      .listViews({ category: id, limit: 20 })
+      .then((result) => {
+        setViews(result.views);
+        setViewsStatus(result.total === 0 ? 'empty' : 'success');
+      })
+      .catch((err) => {
+        console.error('No se pudieron cargar las publicaciones de la categoría', err);
+        setViewsStatus('error');
+      });
+  }, [id]);
 
   if (categoryStatus === 'loading') {
     return <Spinner label="Cargando categoría…" />;
@@ -76,28 +69,27 @@ export default function CategoriaPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      {/*
-        TODO (equipo): breadcrumb/título de la página.
-        Acá abajo ya tenés `category.name` disponible (la categoría ya
-        terminó de cargar en este punto del componente). Armá algo como:
+      {/* Breadcrumb + título con category.name. */}
+      <nav className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+        <Link to="/" className="hover:underline">
+          Tablero
+        </Link>{' '}
+        / {category.name}
+      </nav>
+      <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">{category.name}</h1>
 
-          <nav className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-            <Link to="/" className="hover:underline">Tablero</Link> / {category.name}
-          </nav>
-          <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {category.name}
-          </h1>
+      {viewsStatus === 'loading' && <Spinner label="Cargando publicaciones…" />}
 
-        Fijate las clases de Tailwind que usa el <h1> de TableroPage.tsx
-        para mantener el mismo estilo entre pantallas. No te olvides de
-        importar Link de react-router-dom si lo usás.
-      */}
+      {viewsStatus === 'error' && (
+        <EmptyState
+          title="No pudimos cargar las publicaciones"
+          message="Revisá tu conexión e intentá de nuevo."
+        />
+      )}
 
-      <GridPublicaciones views={views} />
+      {viewsStatus === 'empty' && <EmptyState title="No hay publicaciones en esta categoría" />}
 
-      {/* TODO (equipo): si agregaste el estado 'empty' de arriba, mostrá
-          acá un <EmptyState title="No hay publicaciones en esta categoría" />
-          en vez de un GridPublicaciones vacío cuando no haya resultados. */}
+      {viewsStatus === 'success' && <GridPublicaciones views={views} />}
     </div>
   );
 }
