@@ -7,6 +7,12 @@ mismo tema (social, político, económico, cultural). Cada publicación tiene
 likes y dislikes — tratados como entidades independientes en toda la
 interfaz, nunca fusionados en un único punto de vista.
 
+## Integrantes
+
+- Cristopher Leon
+- Josue Vargas
+- stephzam96-prog
+
 ## Stack tecnológico
 
 - **React 19 + TypeScript** (modo estricto)
@@ -101,6 +107,21 @@ src/
 Cada pantalla vive en su propia carpeta dentro de `pages/`, y consume el API
 exclusivamente a través de su servicio correspondiente en `services/`. Para
 el detalle completo ver `estructura-carpetas.md`.
+
+## Capturas de pantalla
+
+<!-- TODO (equipo): reemplazar por capturas reales antes de la entrega del
+     jueves 26/08. El enunciado pide capturas de las vistas principales
+     (Tablero, Detalle de Publicación, Crear/Editar y al menos una pantalla
+     de Admin) para el tramo 3/3 de la rúbrica de README. -->
+
+| Tablero Principal | Detalle de Publicación |
+|---|---|
+| _(pendiente)_ | _(pendiente)_ |
+
+| Crear/Editar Publicación | Panel Superadmin |
+|---|---|
+| _(pendiente)_ | _(pendiente)_ |
 
 ## Rutas principales
 

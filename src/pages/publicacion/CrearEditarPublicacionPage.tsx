@@ -15,6 +15,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const SOURCE_TYPES: SourceType[] = ['LINK', 'YOUTUBE', 'DOCUMENT'];
 const TITLE_MAX = 120;
+const DESCRIPTION_MIN = 100;
 
 function emptySide(): DraftSideForm {
   return { title: '', description: '', sources: [{ type: 'LINK', url: '', label: '' }] };
@@ -231,7 +232,9 @@ export default function CrearEditarPublicacionPage() {
       ['Lado B', form.counterpart],
     ] as const) {
       if (!side.title.trim()) errors.push(`${label}: el título es obligatorio.`);
-      if (!side.description.trim()) errors.push(`${label}: la descripción es obligatoria.`);
+      if (side.description.trim().length < DESCRIPTION_MIN) {
+        errors.push(`${label}: la descripción debe tener al menos ${DESCRIPTION_MIN} caracteres.`);
+      }
       if (!side.sources.some((s) => s.url.trim())) errors.push(`${label}: agregá al menos una fuente con URL.`);
     }
     return errors;
@@ -569,10 +572,21 @@ function LadoFormulario({
             id={descripcionId}
             required
             rows={4}
+            aria-describedby={`${descripcionId}-count`}
             value={value.description}
             onChange={(e) => onChange({ description: e.target.value })}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
+          <p
+            id={`${descripcionId}-count`}
+            className={`mt-1 text-right text-xs ${
+              value.description.trim().length < DESCRIPTION_MIN
+                ? 'text-red-500 dark:text-red-400'
+                : 'text-gray-400 dark:text-gray-500'
+            }`}
+          >
+            {value.description.trim().length}/{DESCRIPTION_MIN} mínimo
+          </p>
         </div>
 
         <div>
