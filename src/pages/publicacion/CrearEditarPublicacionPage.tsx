@@ -8,10 +8,13 @@ import { categoriasService } from '../../services/categoriasService';
 import { hashtagsService } from '../../services/hashtagsService';
 import { cacheService, type DraftPublicacion, type DraftSideForm } from '../../services/cacheService';
 import { ApiError } from '../../services/httpClient';
+import { extractYoutubeId } from '../../utils/youtube';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const SOURCE_TYPES: SourceType[] = ['LINK', 'YOUTUBE', 'DOCUMENT'];
+const TITLE_MAX = 120;
 
 function emptySide(): DraftSideForm {
   return { title: '', description: '', sources: [{ type: 'LINK', url: '', label: '' }] };
@@ -40,6 +43,10 @@ export default function CrearEditarPublicacionPage() {
   const { user } = useAuth();
 
   const [form, setForm] = useState<DraftPublicacion>(emptyDraft());
+  // Estado del formulario tal como se cargó (vacío al crear, la vista al
+  // editar, o el borrador al restaurar). Sirve para detectar "cambios sin
+  // guardar" al cancelar.
+  const [baseline, setBaseline] = useState<DraftPublicacion>(() => emptyDraft());
 
   // --- Modo edición: cargar la vista existente y precargar el formulario.
   // El PUT es un reemplazo completo (verificado en views.service.js), así
@@ -65,12 +72,14 @@ export default function CrearEditarPublicacionPage() {
         }
         const sideA = view.sides.find((s) => s.type === 'SIDE');
         const sideB = view.sides.find((s) => s.type === 'COUNTERPART');
-        setForm({
+        const loaded: DraftPublicacion = {
           categoryId: view.categoryId,
           side: toDraftSide(sideA),
           counterpart: toDraftSide(sideB),
           hashtags: view.hashtags.map((h) => h.name),
-        });
+        };
+        setForm(loaded);
+        setBaseline(loaded);
         setLoadStatus('success');
       })
       .catch((err) => {
@@ -113,13 +122,17 @@ export default function CrearEditarPublicacionPage() {
 
   function handleRestoreDraft() {
     const draft = cacheService.getDraft();
-    if (draft) setForm(draft);
+    if (draft) {
+      setForm(draft);
+      setBaseline(draft);
+    }
     setDraftPrompt(false);
     setAutosaveEnabled(true);
   }
 
   function handleDiscardDraft() {
     cacheService.clearDraft();
+    setBaseline(emptyDraft());
     setDraftPrompt(false);
     setAutosaveEnabled(true);
   }
@@ -279,6 +292,19 @@ export default function CrearEditarPublicacionPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  // --- Cancelar: si hay cambios sin guardar, pide confirmación antes de
+  // salir; si no, vuelve directo a la pantalla anterior. ---
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  function handleCancel() {
+    const isDirty = JSON.stringify(form) !== JSON.stringify(baseline);
+    if (isDirty) {
+      setShowCancelConfirm(true);
+    } else {
+      navigate(-1);
     }
   }
 
@@ -455,14 +481,36 @@ export default function CrearEditarPublicacionPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="self-start rounded-md bg-blue-600 px-6 py-2 font-medium text-white disabled:opacity-50"
-        >
-          {isSubmitting ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Publicar'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white disabled:opacity-50"
+          >
+            {isSubmitting ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Publicar'}
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="rounded-md border border-gray-300 px-6 py-2 font-medium text-gray-700 dark:border-gray-600 dark:text-gray-300"
+          >
+            Cancelar
+          </button>
+        </div>
       </form>
+
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        title="Descartar cambios"
+        message="Tenés cambios sin guardar. Si salís ahora, se van a perder."
+        confirmLabel="Salir sin guardar"
+        variant="danger"
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          navigate(-1);
+        }}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
     </div>
   );
 }
@@ -503,10 +551,14 @@ function LadoFormulario({
             id={tituloId}
             type="text"
             required
+            maxLength={TITLE_MAX}
             value={value.title}
             onChange={(e) => onChange({ title: e.target.value })}
             className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
           />
+          <p className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">
+            {value.title.length}/{TITLE_MAX}
+          </p>
         </div>
 
         <div>
@@ -528,47 +580,64 @@ function LadoFormulario({
             Fuentes
           </p>
           <div role="group" aria-labelledby={`${uid}-fuentes-label`} className="flex flex-col gap-2">
-            {value.sources.map((source, index) => (
-              <div key={index} className="flex flex-wrap items-center gap-2">
-                <select
-                  aria-label={`Tipo de fuente ${index + 1} (${label})`}
-                  value={source.type}
-                  onChange={(e) => onSourceChange(index, { type: e.target.value as SourceType })}
-                  className="rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
-                >
-                  {SOURCE_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="url"
-                  aria-label={`URL de la fuente ${index + 1} (${label})`}
-                  placeholder="https://..."
-                  value={source.url}
-                  onChange={(e) => onSourceChange(index, { url: e.target.value })}
-                  className="min-w-40 flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
-                />
-                <input
-                  type="text"
-                  aria-label={`Etiqueta de la fuente ${index + 1} (${label}), opcional`}
-                  placeholder="Etiqueta (opcional)"
-                  value={source.label}
-                  onChange={(e) => onSourceChange(index, { label: e.target.value })}
-                  className="w-40 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
-                />
-                <button
-                  type="button"
-                  onClick={() => onRemoveSource(index)}
-                  disabled={value.sources.length <= 1}
-                  aria-label={`Quitar fuente ${index + 1} (${label})`}
-                  className="text-sm text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Quitar
-                </button>
-              </div>
-            ))}
+            {value.sources.map((source, index) => {
+              // Vista previa del embed si la URL es un YouTube válido.
+              const youtubeId = extractYoutubeId(source.url);
+              return (
+                <div key={index} className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      aria-label={`Tipo de fuente ${index + 1} (${label})`}
+                      value={source.type}
+                      onChange={(e) => onSourceChange(index, { type: e.target.value as SourceType })}
+                      className="rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
+                    >
+                      {SOURCE_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="url"
+                      aria-label={`URL de la fuente ${index + 1} (${label})`}
+                      placeholder="https://..."
+                      value={source.url}
+                      onChange={(e) => onSourceChange(index, { url: e.target.value })}
+                      className="min-w-40 flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
+                    />
+                    <input
+                      type="text"
+                      aria-label={`Etiqueta de la fuente ${index + 1} (${label}), opcional`}
+                      placeholder="Etiqueta (opcional)"
+                      value={source.label}
+                      onChange={(e) => onSourceChange(index, { label: e.target.value })}
+                      className="w-40 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onRemoveSource(index)}
+                      disabled={value.sources.length <= 1}
+                      aria-label={`Quitar fuente ${index + 1} (${label})`}
+                      className="text-sm text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                  {youtubeId && (
+                    <div className="aspect-video w-full max-w-md overflow-hidden rounded-md">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${youtubeId}`}
+                        title={`Vista previa de YouTube (${label}, fuente ${index + 1})`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="h-full w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <button
             type="button"
