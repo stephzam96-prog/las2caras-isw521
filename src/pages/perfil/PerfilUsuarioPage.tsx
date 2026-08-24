@@ -4,7 +4,7 @@ import type { View } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { publicacionesService, type GetViewResponse } from '../../services/publicacionesService';
 import { usuariosService } from '../../services/usuariosService';
-import { cacheService } from '../../services/cacheService';
+import { cacheService, type HistoryEntry } from '../../services/cacheService';
 import GridPublicaciones from '../../components/publicaciones/GridPublicaciones';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
@@ -102,6 +102,16 @@ export default function PerfilUsuarioPage() {
     }
   }, [favoriteViews, favoritesStatus]);
 
+  // --- Historial de vistas ---
+  // Se lee de lasdoscaras_history (localStorage), sin llamada al API. Se
+  // graba en el Detalle de Publicación cada vez que se abre una vista.
+  const [history, setHistory] = useState<HistoryEntry[]>(() => cacheService.getHistory());
+
+  function handleClearHistory() {
+    cacheService.clearHistory();
+    setHistory([]);
+  }
+
   // AuthGuard ya garantiza que hay sesion antes de montar esta pantalla;
   // este chequeo es solo defensivo.
   if (!user) return null;
@@ -140,7 +150,7 @@ export default function PerfilUsuarioPage() {
         {myViewsStatus === 'success' && <GridPublicaciones views={myViews} />}
       </section>
 
-      <section>
+      <section className="mb-8">
         <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-gray-100">Mis favoritos</h2>
         {favoritesStatus === 'loading' && <Spinner label="Cargando tus favoritos…" />}
         {favoritesStatus === 'error' && (
@@ -156,6 +166,39 @@ export default function PerfilUsuarioPage() {
           <ul className="flex flex-col gap-2">
             {favoriteViews.map((view) => (
               <ItemFavorito key={view.id} view={view} onRemoved={handleFavoriteRemoved} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Historial</h2>
+          {history.length > 0 && (
+            <button type="button" onClick={handleClearHistory} className="text-sm text-red-600 hover:underline">
+              Limpiar historial
+            </button>
+          )}
+        </div>
+        {history.length === 0 ? (
+          <EmptyState title="Todavía no visitaste ninguna publicación" />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {history.map((entry) => (
+              <li
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 p-3 dark:border-gray-700"
+              >
+                <div>
+                  <Link to={`/views/${entry.id}`} className="font-medium text-blue-600 hover:underline">
+                    {entry.title || 'Publicación'}
+                  </Link>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{entry.categoryName}</p>
+                </div>
+                <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                  {new Date(entry.viewedAt).toLocaleDateString('es-AR')}
+                </span>
+              </li>
             ))}
           </ul>
         )}

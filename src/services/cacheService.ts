@@ -153,6 +153,9 @@ export const cacheService = {
     const updated = [{ ...entry, viewedAt: new Date().toISOString() }, ...withoutDuplicate].slice(0, MAX_HISTORY);
     write(KEYS.history, updated);
   },
+  clearHistory(): void {
+    remove(KEYS.history);
+  },
 
   getDraft(): DraftPublicacion | null {
     return read<DraftPublicacion>(KEYS.draft);
