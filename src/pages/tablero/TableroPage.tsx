@@ -4,7 +4,6 @@ import type { Category, View } from '../../types';
 import { categoriasService } from '../../services/categoriasService';
 import { publicacionesService, type ViewSort } from '../../services/publicacionesService';
 import { cacheService } from '../../services/cacheService';
-import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import GridPublicaciones from '../../components/publicaciones/GridPublicaciones';
 import FiltroOrdenHashtag from '../../components/publicaciones/FiltroOrdenHashtag';
 import Spinner from '../../components/ui/Spinner';
@@ -20,8 +19,6 @@ function isValidSort(value: string | null): value is ViewSort {
 type LoadStatus = 'loading' | 'loading-more' | 'success' | 'empty' | 'error';
 
 export default function TableroPage() {
-  const isOnline = useOnlineStatus();
-
   // Filtros: la URL manda (para que /?category=...&sort=... sea
   // compartible/recargable). Si no hay query params (ej. entraste a "/"
   // a mano), se cae a lasdoscaras_filters como último recurso -- mismo
@@ -48,6 +45,9 @@ export default function TableroPage() {
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [autoRetryDone, setAutoRetryDone] = useState(false);
+  // true cuando el fetch falló y estamos mostrando la última tanda
+  // cacheada (modo lectura sin conexión).
+  const [showingCached, setShowingCached] = useState(false);
 
   // Categorías: cache inmediato (stale-while-revalidate) + refresco en
   // segundo plano. Un fallo acá no debe tumbar el tablero entero -- si no
@@ -98,9 +98,22 @@ export default function TableroPage() {
         setTotal(result.total);
         setPage(result.page);
         setStatus(result.total === 0 ? 'empty' : 'success');
+        setShowingCached(false);
+        // Guardamos la primera página para poder mostrarla offline.
+        if (!append) cacheService.setBoardViews(result.views);
       } catch (err) {
         console.error('No se pudieron cargar las publicaciones', err);
-        setStatus('error');
+        // Modo lectura sin conexión: si tenemos una tanda cacheada, la
+        // mostramos con un aviso en vez de dejar la pantalla en error.
+        const cached = !append ? cacheService.getBoardViews() : null;
+        if (cached && cached.length > 0) {
+          setViews(cached);
+          setTotal(cached.length);
+          setShowingCached(true);
+          setStatus('success');
+        } else {
+          setStatus('error');
+        }
       }
     },
     [selectedCategory, selectedHashtag, sort],
@@ -124,9 +137,9 @@ export default function TableroPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      {!isOnline && (
+      {showingCached && (
         <div className="mb-4 rounded-md bg-yellow-100 px-4 py-2 text-sm text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-          Estás sin conexión. Los datos que ves pueden estar desactualizados.
+          Mostrando información guardada — sin conexión al servidor.
         </div>
       )}
 

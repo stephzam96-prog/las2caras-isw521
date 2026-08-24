@@ -1,7 +1,7 @@
 // Único módulo del proyecto que llama localStorage.getItem/setItem directo.
 // Todo lo demás (context, hooks, páginas) pasa por acá.
 
-import type { Category, Hashtag, SourceType, User } from '../types';
+import type { Category, Hashtag, SourceType, User, View } from '../types';
 import type { ViewSort } from './publicacionesService';
 
 export interface StoredAuth {
@@ -52,6 +52,7 @@ const KEYS = {
   draft: 'lasdoscaras_draft',
   theme: 'lasdoscaras_theme',
   history: 'lasdoscaras_history',
+  board: 'lasdoscaras_board',
 } as const;
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -125,6 +126,20 @@ export const cacheService = {
   },
   setFilters(filters: TableroFilters): void {
     write(KEYS.filters, filters);
+  },
+
+  // Última tanda de publicaciones del Tablero, para el modo lectura sin
+  // conexión: si el GET /views falla (API caída / offline), se muestran
+  // estas con un aviso "Mostrando información guardada". Clave nueva
+  // (lasdoscaras_board), agregada para cumplir el requisito de contenido
+  // cacheado del enunciado -- documentarla en la tabla de claves del
+  // CLAUDE.md. Sin TTL: mejor mostrar algo viejo que una pantalla vacía
+  // cuando no hay red.
+  getBoardViews(): View[] | null {
+    return read<View[]>(KEYS.board);
+  },
+  setBoardViews(views: View[]): void {
+    write(KEYS.board, views);
   },
 
   getHistory(): HistoryEntry[] {
