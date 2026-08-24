@@ -8,6 +8,8 @@ import EmptyState from '../../components/ui/EmptyState';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
+const PAGE_SIZE = 20;
+
 const STATUS_LABEL: Record<User['status'], { text: string; className: string }> = {
   ACTIVE: { text: 'Activo', className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
   PENDING: { text: 'Pendiente', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200' },
@@ -25,26 +27,38 @@ export default function AdminUsuariosPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
+  // Paginación real: el backend ya devuelve total/page/limit
+  // (verificado en users.service.js -- prisma.user.count + findMany con
+  // skip/take), no hace falta traer todo con un limit fijo de 100.
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  // Cambiar la búsqueda vuelve a la página 1 -- si te quedabas en la
+  // página 3 de una búsqueda anterior, con una nueva búsqueda esa página
+  // podría ni existir.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   // Id del usuario cuyo baneo/desbaneo se está procesando (deshabilita su
   // botón mientras tanto para evitar doble clic).
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Fetch inicial + búsqueda: se re-dispara cuando cambia `debouncedSearch`.
-  // En el primer render el search está vacío, así que trae la lista completa.
   useEffect(() => {
     setStatus('loading');
     const q = debouncedSearch.trim();
     usuariosService
-      .listUsers({ search: q || undefined, limit: 100 })
+      .listUsers({ search: q || undefined, page, limit: PAGE_SIZE })
       .then((result) => {
         setUsers(result.users);
+        setTotal(result.total);
         setStatus('success');
       })
       .catch((err) => {
         console.error('No se pudieron cargar los usuarios', err);
         setStatus('error');
       });
-  }, [debouncedSearch]);
+  }, [debouncedSearch, page]);
 
   // Banear/desbanear según el estado actual del usuario. Actualiza solo esa
   // fila en la lista local con la respuesta, sin refetchear todo (mismo
@@ -63,6 +77,8 @@ export default function AdminUsuariosPage() {
       setProcessingId(null);
     }
   }
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -84,54 +100,83 @@ export default function AdminUsuariosPage() {
       )}
 
       {status === 'success' && users.length > 0 && (
-        <table className="w-full border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="py-2">Nombre</th>
-              <th className="py-2">Email</th>
-              <th className="py-2">Estado</th>
-              <th className="py-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((rowUser) => {
-              const badge = STATUS_LABEL[rowUser.status];
-              const isSelf = rowUser.id === currentUser?.id;
-              return (
-                <tr key={rowUser.id} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-2">{rowUser.name}</td>
-                  <td className="py-2">{rowUser.email}</td>
-                  <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>
-                  </td>
-                  <td className="py-2">
-                    {/* Guarda de auto-baneo: el API no la tiene, así que esta
-                        es la única protección -- no dejamos que un superadmin
-                        se banee a sí mismo. */}
-                    {isSelf ? (
-                      <span className="text-xs text-gray-400" title="No podés banearte a vos mismo">
-                        (vos)
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleBan(rowUser)}
-                        disabled={processingId === rowUser.id}
-                        className={
-                          rowUser.status === 'SUSPENDED'
-                            ? 'text-green-600 hover:underline disabled:opacity-50'
-                            : 'text-red-600 hover:underline disabled:opacity-50'
-                        }
-                      >
-                        {rowUser.status === 'SUSPENDED' ? 'Desbanear' : 'Banear'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <>
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="py-2">Nombre</th>
+                <th className="py-2">Email</th>
+                <th className="py-2">Estado</th>
+                <th className="py-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((rowUser) => {
+                const badge = STATUS_LABEL[rowUser.status];
+                const isSelf = rowUser.id === currentUser?.id;
+                return (
+                  <tr key={rowUser.id} className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="py-2">{rowUser.name}</td>
+                    <td className="py-2">{rowUser.email}</td>
+                    <td className="py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>
+                    </td>
+                    <td className="py-2">
+                      {/* Guarda de auto-baneo: el API no la tiene, así que esta
+                          es la única protección -- no dejamos que un superadmin
+                          se banee a sí mismo. */}
+                      {isSelf ? (
+                        <span className="text-xs text-gray-400" title="No podés banearte a vos mismo">
+                          (vos)
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBan(rowUser)}
+                          disabled={processingId === rowUser.id}
+                          className={
+                            rowUser.status === 'SUSPENDED'
+                              ? 'text-green-600 hover:underline disabled:opacity-50'
+                              : 'text-red-600 hover:underline disabled:opacity-50'
+                          }
+                        >
+                          {rowUser.status === 'SUSPENDED' ? 'Desbanear' : 'Banear'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* TODO (equipo, opcional): si con más usuarios de prueba el
+              pager se siente corto, se puede sumar un input "ir a la
+              página N" o un selector de PAGE_SIZE -- el backend ya soporta
+              cualquier page/limit (users.service.js), no hace falta tocar
+              nada del lado del servidor para eso. */}
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-md border border-gray-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600"
+            >
+              Anterior
+            </button>
+            <span className="text-gray-500 dark:text-gray-400">
+              Página {page} de {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-md border border-gray-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600"
+            >
+              Siguiente
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

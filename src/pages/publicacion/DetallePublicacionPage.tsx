@@ -9,6 +9,7 @@ import { publicacionesService } from '../../services/publicacionesService';
 import { comentariosService } from '../../services/comentariosService';
 import { cacheService } from '../../services/cacheService';
 import { ApiError } from '../../services/httpClient';
+import { extractYoutubeId } from '../../utils/youtube';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
@@ -254,19 +255,50 @@ function LadoDetalle({
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Fuentes
           </p>
-          <ul className="flex flex-col gap-1">
-            {side.sources.map((source) => (
-              <li key={source.id}>
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {source.label || source.url}
-                </a>
-              </li>
-            ))}
+          {/* TODO (equipo, opcional): las fuentes tipo DOCUMENT hoy caen al
+              link simple (mismo que LINK) -- si quieren, podrían mostrar un
+              ícono distinto según source.type para diferenciarlas
+              visualmente, no es indispensable. */}
+          <ul className="flex flex-col gap-3">
+            {side.sources.map((source) => {
+              const youtubeId = source.type === 'YOUTUBE' ? extractYoutubeId(source.url) : null;
+              return (
+                <li key={source.id}>
+                  {youtubeId ? (
+                    <div>
+                      <div className="aspect-video w-full overflow-hidden rounded-md">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${youtubeId}`}
+                          title={source.label || 'Video de YouTube'}
+                          className="h-full w-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                      {source.label && (
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {source.label}
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {source.label || source.url}
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -391,6 +423,14 @@ function SeccionComentarios({ viewId }: { viewId: string }) {
           onSubmit={handleCreateThread}
           className="mt-4 flex flex-col gap-2 rounded-md border border-gray-200 p-3 dark:border-gray-700"
         >
+          {/* Advertencia estática, no depende de ningún estado del backend
+              -- verificado que comments.service.js no implementa ningún
+              tipo de moderación/aprobación real (ni de IA ni manual), así
+              que no se agrega ningún indicador de "en revisión" post-envío
+              que sugeriría un pipeline que no existe. */}
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Los comentarios pueden ser analizados por un sistema automático para detectar contenido inapropiado.
+          </p>
           <input
             type="text"
             aria-label="Título del hilo (opcional)"
