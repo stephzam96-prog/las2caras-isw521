@@ -1,40 +1,47 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Category, Hashtag, View } from '../../types';
+import { useSearchParams } from 'react-router-dom';
+import type { Category, View } from '../../types';
 import { categoriasService } from '../../services/categoriasService';
-import { hashtagsService } from '../../services/hashtagsService';
 import { publicacionesService, type ViewSort } from '../../services/publicacionesService';
 import { cacheService } from '../../services/cacheService';
-import { useDebounce } from '../../hooks/useDebounce';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import GridPublicaciones from '../../components/publicaciones/GridPublicaciones';
+import FiltroOrdenHashtag from '../../components/publicaciones/FiltroOrdenHashtag';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
 const PAGE_SIZE = 10;
+const VALID_SORTS: ViewSort[] = ['recent', 'likes', 'dislikes'];
 
-const SORT_OPTIONS: { value: ViewSort; label: string }[] = [
-  { value: 'recent', label: 'Más recientes' },
-  { value: 'likes', label: 'Más likes' },
-  { value: 'dislikes', label: 'Más dislikes' },
-];
+function isValidSort(value: string | null): value is ViewSort {
+  return value !== null && (VALID_SORTS as string[]).includes(value);
+}
 
 type LoadStatus = 'loading' | 'loading-more' | 'success' | 'empty' | 'error';
 
 export default function TableroPage() {
   const isOnline = useOnlineStatus();
 
-  // Filtros: se restauran una sola vez al montar desde lasdoscaras_filters.
+  // Filtros: la URL manda (para que /?category=...&sort=... sea
+  // compartible/recargable). Si no hay query params (ej. entraste a "/"
+  // a mano), se cae a lasdoscaras_filters como último recurso -- mismo
+  // criterio que categorías/hashtags cacheados en otras pantallas.
+  const [searchParams, setSearchParams] = useSearchParams();
   const [initialFilters] = useState(() => cacheService.getFilters());
-  const [selectedCategory, setSelectedCategory] = useState(initialFilters?.category ?? '');
-  const [selectedHashtag, setSelectedHashtag] = useState(initialFilters?.hashtag ?? '');
-  const [sort, setSort] = useState<ViewSort>(initialFilters?.sort ?? 'recent');
+
+  const [selectedCategory, setSelectedCategory] = useState(
+    () => searchParams.get('category') ?? initialFilters?.category ?? '',
+  );
+  const [selectedHashtag, setSelectedHashtag] = useState(
+    () => searchParams.get('hashtag') ?? initialFilters?.hashtag ?? '',
+  );
+  const [sort, setSort] = useState<ViewSort>(() => {
+    const fromUrl = searchParams.get('sort');
+    if (isValidSort(fromUrl)) return fromUrl;
+    return initialFilters?.sort ?? 'recent';
+  });
 
   const [categories, setCategories] = useState<Category[]>([]);
-
-  const [hashtagQuery, setHashtagQuery] = useState('');
-  const debouncedHashtagQuery = useDebounce(hashtagQuery, 300);
-  const [hashtagSuggestions, setHashtagSuggestions] = useState<Hashtag[]>([]);
-  const [isHashtagDropdownOpen, setIsHashtagDropdownOpen] = useState(false);
 
   const [views, setViews] = useState<View[]>([]);
   const [page, setPage] = useState(1);
@@ -59,35 +66,21 @@ export default function TableroPage() {
       .catch((err) => console.error('No se pudieron refrescar las categorías', err));
   }, []);
 
-  // Hashtags: mismo patrón, pero reutilizando el efecto para el
-  // autocomplete -- cuando el query está vacío, sirve como "sugerencias
-  // iniciales" (cacheadas); cuando el usuario tipea, es la búsqueda en vivo
-  // (nunca cacheada individualmente, solo la respuesta con query vacío).
+  // Filtros activos: se reflejan en la URL (compartible/recargable) y se
+  // persisten en localStorage como fallback, cada vez que cambian.
   useEffect(() => {
-    const q = debouncedHashtagQuery.trim();
+    const params: Record<string, string> = {};
+    if (selectedCategory) params.category = selectedCategory;
+    if (selectedHashtag) params.hashtag = selectedHashtag;
+    if (sort !== 'recent') params.sort = sort;
+    setSearchParams(params, { replace: true });
 
-    if (q === '') {
-      const cached = cacheService.getHashtags();
-      if (cached) setHashtagSuggestions(cached);
-    }
-
-    hashtagsService
-      .searchHashtags(q || undefined)
-      .then(({ hashtags }) => {
-        setHashtagSuggestions(hashtags);
-        if (q === '') cacheService.setHashtags(hashtags);
-      })
-      .catch((err) => console.error('No se pudieron cargar los hashtags', err));
-  }, [debouncedHashtagQuery]);
-
-  // Filtros activos: se persisten siempre que cambian (permanente, sin TTL).
-  useEffect(() => {
     cacheService.setFilters({
       category: selectedCategory || undefined,
       hashtag: selectedHashtag || undefined,
       sort,
     });
-  }, [selectedCategory, selectedHashtag, sort]);
+  }, [selectedCategory, selectedHashtag, sort, setSearchParams]);
 
   const fetchViews = useCallback(
     async (targetPage: number, append: boolean) => {
@@ -129,17 +122,6 @@ export default function TableroPage() {
     return () => clearTimeout(timer);
   }, [status, autoRetryDone, fetchViews]);
 
-  function handleSelectHashtag(hashtag: Hashtag) {
-    setSelectedHashtag(hashtag.name);
-    setHashtagQuery(hashtag.name);
-    setIsHashtagDropdownOpen(false);
-  }
-
-  function handleClearHashtag() {
-    setSelectedHashtag('');
-    setHashtagQuery('');
-  }
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
       {!isOnline && (
@@ -170,93 +152,7 @@ export default function TableroPage() {
           </select>
         </div>
 
-        <div>
-          <label htmlFor="filtro-orden" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Ordenar por
-          </label>
-          <select
-            id="filtro-orden"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as ViewSort)}
-            className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div
-          className="relative"
-          // Cierra el dropdown solo cuando el foco sale por completo del
-          // contenedor (input + lista de sugerencias), no en cada blur del
-          // input -- así un Tab desde el input hacia una sugerencia no lo
-          // cierra con el foco todavía adentro (era una trampa de foco).
-          // relatedTarget es null cuando se hace click afuera en algo no
-          // focuseable, así que el cierre por click-afuera se sigue
-          // comportando igual que antes.
-          onBlur={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-              setIsHashtagDropdownOpen(false);
-            }
-          }}
-        >
-          <label htmlFor="filtro-hashtag" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Hashtag
-          </label>
-          {selectedHashtag ? (
-            <span className="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600">
-              #{selectedHashtag}
-              <button
-                type="button"
-                onClick={handleClearHashtag}
-                aria-label="Quitar filtro de hashtag"
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                ✕
-              </button>
-            </span>
-          ) : (
-            <>
-              <input
-                id="filtro-hashtag"
-                type="text"
-                role="combobox"
-                aria-expanded={isHashtagDropdownOpen && hashtagSuggestions.length > 0}
-                aria-controls="filtro-hashtag-listbox"
-                aria-autocomplete="list"
-                placeholder="Buscar hashtag…"
-                value={hashtagQuery}
-                onChange={(e) => setHashtagQuery(e.target.value)}
-                onFocus={() => setIsHashtagDropdownOpen(true)}
-                className="w-48 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
-              />
-              {isHashtagDropdownOpen && hashtagSuggestions.length > 0 && (
-                <ul
-                  id="filtro-hashtag-listbox"
-                  role="listbox"
-                  className="absolute z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-                >
-                  {hashtagSuggestions.map((h) => (
-                    <li key={h.id} role="presentation">
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={false}
-                        onMouseDown={() => handleSelectHashtag(h)}
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        #{h.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
-        </div>
+        <FiltroOrdenHashtag sort={sort} onSortChange={setSort} hashtag={selectedHashtag} onHashtagChange={setSelectedHashtag} />
       </div>
 
       {status === 'loading' && <Spinner label="Cargando publicaciones…" />}
