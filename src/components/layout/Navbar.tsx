@@ -164,6 +164,13 @@ export default function Navbar() {
                   >
                     Mi perfil
                   </Link>
+                  <Link
+                    to="/views/new"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    Crear publicación
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -244,6 +251,9 @@ export default function Navbar() {
             <ThemeToggle />
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
+                <Link to="/views/new" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
+                  Crear publicación
+                </Link>
                 <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
                   Mi perfil
                 </Link>
