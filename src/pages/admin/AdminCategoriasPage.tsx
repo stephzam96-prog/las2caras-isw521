@@ -206,49 +206,51 @@ export default function AdminCategoriasPage() {
       )}
 
       {status === 'success' && categories.length > 0 && (
-        <table className="w-full border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="py-2">Nombre</th>
-              <th className="py-2">Estado</th>
-              <th className="py-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((category) => (
-              <tr key={category.id} className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2">{category.name}</td>
-                <td className="py-2">
-                  {category.deletedAt ? (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900 dark:text-red-300">
-                      Eliminada
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700 dark:bg-green-900 dark:text-green-300">
-                      Activa
-                    </span>
-                  )}
-                </td>
-                <td className="py-2">
-                  <button
-                    type="button"
-                    onClick={(event) => handleOpenEdit(event, category)}
-                    className="mr-3 text-blue-600 hover:underline"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDeleteConfirm(category)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Eliminar
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="py-2">Nombre</th>
+                <th className="py-2">Estado</th>
+                <th className="py-2">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {categories.map((category) => (
+                <tr key={category.id} className="border-b border-gray-100 dark:border-gray-800">
+                  <td className="py-2">{category.name}</td>
+                  <td className="py-2">
+                    {category.deletedAt ? (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900 dark:text-red-300">
+                        Eliminada
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700 dark:bg-green-900 dark:text-green-300">
+                        Activa
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2">
+                    <button
+                      type="button"
+                      onClick={(event) => handleOpenEdit(event, category)}
+                      className="mr-3 text-blue-600 hover:underline"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDeleteConfirm(category)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* --- Modal de crear/editar --- */}

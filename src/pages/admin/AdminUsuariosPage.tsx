@@ -101,54 +101,56 @@ export default function AdminUsuariosPage() {
 
       {status === 'success' && users.length > 0 && (
         <>
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="py-2">Nombre</th>
-                <th className="py-2">Email</th>
-                <th className="py-2">Estado</th>
-                <th className="py-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((rowUser) => {
-                const badge = STATUS_LABEL[rowUser.status];
-                const isSelf = rowUser.id === currentUser?.id;
-                return (
-                  <tr key={rowUser.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="py-2">{rowUser.name}</td>
-                    <td className="py-2">{rowUser.email}</td>
-                    <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>
-                    </td>
-                    <td className="py-2">
-                      {/* Guarda de auto-baneo: el API no la tiene, así que esta
-                          es la única protección -- no dejamos que un superadmin
-                          se banee a sí mismo. */}
-                      {isSelf ? (
-                        <span className="text-xs text-gray-400" title="No podés banearte a vos mismo">
-                          (vos)
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleBan(rowUser)}
-                          disabled={processingId === rowUser.id}
-                          className={
-                            rowUser.status === 'SUSPENDED'
-                              ? 'text-green-600 hover:underline disabled:opacity-50'
-                              : 'text-red-600 hover:underline disabled:opacity-50'
-                          }
-                        >
-                          {rowUser.status === 'SUSPENDED' ? 'Desbanear' : 'Banear'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="py-2">Nombre</th>
+                  <th className="py-2">Email</th>
+                  <th className="py-2">Estado</th>
+                  <th className="py-2">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((rowUser) => {
+                  const badge = STATUS_LABEL[rowUser.status];
+                  const isSelf = rowUser.id === currentUser?.id;
+                  return (
+                    <tr key={rowUser.id} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-2">{rowUser.name}</td>
+                      <td className="py-2">{rowUser.email}</td>
+                      <td className="py-2">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>
+                      </td>
+                      <td className="py-2">
+                        {/* Guarda de auto-baneo: el API no la tiene, así que esta
+                            es la única protección -- no dejamos que un superadmin
+                            se banee a sí mismo. */}
+                        {isSelf ? (
+                          <span className="text-xs text-gray-400" title="No podés banearte a vos mismo">
+                            (vos)
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleBan(rowUser)}
+                            disabled={processingId === rowUser.id}
+                            className={
+                              rowUser.status === 'SUSPENDED'
+                                ? 'text-green-600 hover:underline disabled:opacity-50'
+                                : 'text-red-600 hover:underline disabled:opacity-50'
+                            }
+                          >
+                            {rowUser.status === 'SUSPENDED' ? 'Desbanear' : 'Banear'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {/* TODO (equipo, opcional): si con más usuarios de prueba el
               pager se siente corto, se puede sumar un input "ir a la

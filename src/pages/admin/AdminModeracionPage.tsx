@@ -87,47 +87,49 @@ export default function AdminModeracionPage() {
       )}
 
       {status === 'success' && views.length > 0 && (
-        <table className="w-full border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="py-2">Título (Lado A)</th>
-              <th className="py-2">Categoría</th>
-              <th className="py-2">Autor</th>
-              <th className="py-2">Estado</th>
-              <th className="py-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {views.map((view) => {
-              const sideA = view.sides.find((s) => s.type === 'SIDE') ?? view.sides[0];
-              const badge = STATUS_LABEL[view.status];
-              return (
-                <tr key={view.id} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-2">{sideA?.title}</td>
-                  <td className="py-2">{view.category.name}</td>
-                  <td className="py-2">{view.author.name}</td>
-                  <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>
-                  </td>
-                  <td className="py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePublish(view)}
-                      disabled={processingId === view.id}
-                      className={
-                        view.status === 'PUBLISHED'
-                          ? 'text-red-600 hover:underline disabled:opacity-50'
-                          : 'text-green-600 hover:underline disabled:opacity-50'
-                      }
-                    >
-                      {view.status === 'PUBLISHED' ? 'Despublicar' : 'Publicar'}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="py-2">Título (Lado A)</th>
+                <th className="py-2">Categoría</th>
+                <th className="py-2">Autor</th>
+                <th className="py-2">Estado</th>
+                <th className="py-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {views.map((view) => {
+                const sideA = view.sides.find((s) => s.type === 'SIDE') ?? view.sides[0];
+                const badge = STATUS_LABEL[view.status];
+                return (
+                  <tr key={view.id} className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="py-2">{sideA?.title}</td>
+                    <td className="py-2">{view.category.name}</td>
+                    <td className="py-2">{view.author.name}</td>
+                    <td className="py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>
+                    </td>
+                    <td className="py-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePublish(view)}
+                        disabled={processingId === view.id}
+                        className={
+                          view.status === 'PUBLISHED'
+                            ? 'text-red-600 hover:underline disabled:opacity-50'
+                            : 'text-green-600 hover:underline disabled:opacity-50'
+                        }
+                      >
+                        {view.status === 'PUBLISHED' ? 'Despublicar' : 'Publicar'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
