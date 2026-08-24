@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import type { Category } from '../../types';
 import { categoriasService } from '../../services/categoriasService';
+import { publicacionesService } from '../../services/publicacionesService';
 import { ApiError } from '../../services/httpClient';
 import { useToast } from '../../hooks/useToast';
 import Spinner from '../../components/ui/Spinner';
@@ -144,9 +145,30 @@ export default function AdminCategoriasPage() {
 
   // Confirmación antes de borrar vía ConfirmModal (antes usaba
   // window.confirm). La API NO valida si la categoría tiene publicaciones
-  // asociadas, así que esta es la única red de seguridad -- no debe
-  // depender de que alguien se acuerde de agregarla después.
+  // asociadas (softDeleteCategory en categories.service.js no consulta
+  // PoliticalView en absoluto) -- así que antes de abrir el modal,
+  // consultamos nosotros cuántas publicaciones la usan
+  // (publicacionesService.listViews({ category, limit: 1 }).total) para
+  // poder avisarle al admin con un dato real, no un mensaje genérico.
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleteTargetViewCount, setDeleteTargetViewCount] = useState<number | null>(null);
+  const [isCheckingDelete, setIsCheckingDelete] = useState(false);
+
+  async function handleOpenDeleteConfirm(category: Category) {
+    setDeleteTarget(category);
+    setDeleteTargetViewCount(null);
+    setIsCheckingDelete(true);
+    try {
+      const result = await publicacionesService.listViews({ category: category.id, limit: 1 });
+      setDeleteTargetViewCount(result.total);
+    } catch (err) {
+      // Si falla la verificación, dejamos el conteo en null -- el modal
+      // cae a un mensaje genérico en vez de bloquear el flujo de borrado.
+      console.error('No se pudo verificar publicaciones asociadas a la categoría', err);
+    } finally {
+      setIsCheckingDelete(false);
+    }
+  }
 
   async function handleDelete(category: Category) {
     setDeleteTarget(null);
@@ -156,6 +178,7 @@ export default function AdminCategoriasPage() {
       setCategories((prev) =>
         prev.map((c) => (c.id === category.id ? { ...c, deletedAt: new Date().toISOString() } : c)),
       );
+      setDeleteTargetViewCount(null);
       showToast(`Categoría "${category.name}" eliminada.`, 'success');
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Ocurrió un error al eliminar la categoría.';
@@ -216,7 +239,7 @@ export default function AdminCategoriasPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDeleteTarget(category)}
+                    onClick={() => handleOpenDeleteConfirm(category)}
                     className="text-red-600 hover:underline"
                   >
                     Eliminar
@@ -278,14 +301,21 @@ export default function AdminCategoriasPage() {
         isOpen={deleteTarget !== null}
         title="Eliminar categoría"
         message={
-          deleteTarget
-            ? `¿Eliminar la categoría "${deleteTarget.name}"? Esta acción no se puede deshacer, y las publicaciones que ya la usan van a seguir apuntando a ella.`
-            : ''
+          !deleteTarget
+            ? ''
+            : isCheckingDelete
+              ? `Verificando publicaciones asociadas a "${deleteTarget.name}"…`
+              : deleteTargetViewCount && deleteTargetViewCount > 0
+                ? `¿Eliminar la categoría "${deleteTarget.name}"? Tiene ${deleteTargetViewCount} ${deleteTargetViewCount === 1 ? 'publicación asociada' : 'publicaciones asociadas'} que van a seguir apuntando a ella. Esta acción no se puede deshacer.`
+                : `¿Eliminar la categoría "${deleteTarget.name}"? Esta acción no se puede deshacer.`
         }
         confirmLabel="Eliminar"
         variant="danger"
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteTargetViewCount(null);
+        }}
       />
     </div>
   );
