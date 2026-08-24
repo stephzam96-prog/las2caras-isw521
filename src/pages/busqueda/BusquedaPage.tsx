@@ -5,6 +5,7 @@ import { busquedaService } from '../../services/busquedaService';
 import { useDebounce } from '../../hooks/useDebounce';
 import EmptyState from '../../components/ui/EmptyState';
 import Spinner from '../../components/ui/Spinner';
+import HighlightedText from '../../components/ui/HighlightedText';
 
 // NOTA IMPORTANTE (ver también CLAUDE.md, sección "GridPublicaciones/
 // TarjetaPublicacion -- regla de uso"): esta pantalla NO reutiliza
@@ -102,6 +103,21 @@ export default function BusquedaPage() {
         <EmptyState title="Buscá algo" message="Escribí un término para ver resultados." />
       ) : (
         <>
+          {(status === 'success' || status === 'loading') && (
+            <h2 className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+              Resultados para "{debouncedQuery}"
+              {status === 'success' && (
+                <>
+                  {' '}
+                  · {results.length} {results.length === 1 ? 'resultado' : 'resultados'}
+                  {/* El backend (search.service.js) no devuelve un total real,
+                      solo hasta 20 vistas -- este numero es "cuantos se estan
+                      mostrando", no necesariamente todas las coincidencias. */}
+                </>
+              )}
+            </h2>
+          )}
+
           {status === 'loading' && <Spinner label="Buscando..." />}
 
           {status === 'error' && (
@@ -123,7 +139,7 @@ export default function BusquedaPage() {
           {status === 'success' && (
             <ul className="flex flex-col gap-2">
               {results.map((view) => (
-                <ResultadoBusquedaCard key={view.id} view={view} />
+                <ResultadoBusquedaCard key={view.id} view={view} query={debouncedQuery} />
               ))}
             </ul>
           )}
@@ -136,12 +152,12 @@ export default function BusquedaPage() {
 // --- YA ARMADO: tarjeta liviana para un resultado de búsqueda ---
 // No reutiliza TarjetaPublicacion a propósito -- ver la nota al inicio
 // del archivo y en CLAUDE.md.
-function ResultadoBusquedaCard({ view }: { view: SearchViewResult }) {
+function ResultadoBusquedaCard({ view, query }: { view: SearchViewResult; query: string }) {
   const sideA = view.sides.find((s) => s.type === 'SIDE') ?? view.sides[0];
   return (
     <li className="rounded-md border border-gray-200 p-3 dark:border-gray-700">
       <Link to={`/views/${view.id}`} className="font-medium text-blue-600 hover:underline">
-        {sideA?.title}
+        <HighlightedText text={sideA?.title ?? ''} query={query} />
       </Link>
       <p className="text-sm text-gray-500 dark:text-gray-400">{view.category.name}</p>
     </li>
