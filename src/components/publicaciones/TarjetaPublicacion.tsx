@@ -47,13 +47,15 @@ export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
               disabled={isToggling}
               aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
               aria-pressed={isFavorite}
-              className={`rounded-md p-1.5 disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`rounded-md p-1.5 disabled:cursor-not-allowed disabled:opacity-60 transition-colors flex items-center justify-center ${
                 isFavorite
                   ? 'text-red-600 dark:text-red-400'
                   : 'text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400'
               }`}
             >
-              {isFavorite ? '♥' : '♡'}
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
             </button>
           )}
           <button
@@ -63,9 +65,12 @@ export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
               void share(`${window.location.origin}/views/${view.id}`, sideATitle);
             }}
             aria-label="Compartir publicación"
-            className="rounded-md p-1.5 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400"
+            className="rounded-md p-1.5 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400 flex items-center justify-center transition-colors"
           >
-            🔗
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
           </button>
         </div>
       </header>
@@ -131,26 +136,32 @@ function BotonesReaccion({
         disabled={disabled}
         onClick={() => onReact('LIKE')}
         title={disabled && side.myReaction !== 'LIKE' ? 'Iniciá sesión para reaccionar' : undefined}
-        className={`rounded-md px-2 py-1 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`rounded-md px-2 py-1 disabled:cursor-not-allowed disabled:opacity-60 flex items-center gap-1 transition-colors ${
           side.myReaction === 'LIKE'
-            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-semibold'
             : 'hover:bg-gray-100 dark:hover:bg-gray-700'
         }`}
       >
-        👍 {side.likeCount}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={side.myReaction === 'LIKE' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+        </svg>
+        <span>{side.likeCount}</span>
       </button>
       <button
         type="button"
         disabled={disabled}
         onClick={() => onReact('DISLIKE')}
         title={disabled && side.myReaction !== 'DISLIKE' ? 'Iniciá sesión para reaccionar' : undefined}
-        className={`rounded-md px-2 py-1 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`rounded-md px-2 py-1 disabled:cursor-not-allowed disabled:opacity-60 flex items-center gap-1 transition-colors ${
           side.myReaction === 'DISLIKE'
-            ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+            ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 font-semibold'
             : 'hover:bg-gray-100 dark:hover:bg-gray-700'
         }`}
       >
-        👎 {side.dislikeCount}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={side.myReaction === 'DISLIKE' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+        </svg>
+        <span>{side.dislikeCount}</span>
       </button>
     </div>
   );
