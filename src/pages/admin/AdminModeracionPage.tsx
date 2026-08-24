@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { View, ViewStatus } from '../../types';
 import { publicacionesService } from '../../services/publicacionesService';
+import { useToast } from '../../hooks/useToast';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
@@ -13,9 +14,13 @@ const STATUS_LABEL: Record<ViewStatus, { text: string; className: string }> = {
 };
 
 export default function AdminModeracionPage() {
+  const { showToast } = useToast();
   const [views, setViews] = useState<View[]>([]);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [statusFilter, setStatusFilter] = useState<ViewStatus | ''>('');
+  // Id de la publicación cuyo cambio de estado se está procesando, para
+  // deshabilitar su botón y evitar doble submit.
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchViews = useCallback(async () => {
     setStatus('loading');
@@ -38,6 +43,7 @@ export default function AdminModeracionPage() {
   }, [fetchViews]);
 
   async function handleTogglePublish(targetView: View) {
+    setProcessingId(targetView.id);
     try {
       const response = targetView.status === 'PUBLISHED'
         ? await publicacionesService.unpublishView(targetView.id)
@@ -48,9 +54,15 @@ export default function AdminModeracionPage() {
       // la respuesta (rompería el .find sobre .sides al renderizar), solo
       // actualizamos el campo status que sí es confiable.
       setViews((prev) => prev.map((v) => (v.id === targetView.id ? { ...v, status: response.view.status } : v)));
+      showToast(
+        response.view.status === 'PUBLISHED' ? 'Publicación republicada.' : 'Publicación despublicada.',
+        'success',
+      );
     } catch (err) {
       console.error('Error al cambiar el estado de publicación', err);
-      alert('No se pudo cambiar el estado de publicación.');
+      showToast('No se pudo cambiar el estado de publicación.', 'error');
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -101,8 +113,11 @@ export default function AdminModeracionPage() {
                     <button
                       type="button"
                       onClick={() => handleTogglePublish(view)}
+                      disabled={processingId === view.id}
                       className={
-                        view.status === 'PUBLISHED' ? 'text-red-600 hover:underline' : 'text-green-600 hover:underline'
+                        view.status === 'PUBLISHED'
+                          ? 'text-red-600 hover:underline disabled:opacity-50'
+                          : 'text-green-600 hover:underline disabled:opacity-50'
                       }
                     >
                       {view.status === 'PUBLISHED' ? 'Despublicar' : 'Publicar'}

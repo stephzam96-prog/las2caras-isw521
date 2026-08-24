@@ -30,6 +30,9 @@ export default function AdminCategoriasPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [nameInput, setNameInput] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  // true mientras se está guardando (crear/editar), para deshabilitar el
+  // botón Guardar y evitar doble submit.
+  const [isSaving, setIsSaving] = useState(false);
 
   // Accesibilidad del modal: guardamos qué botón lo abrió para devolverle el
   // foco al cerrar, una ref al input para mandarle el foco apenas se abre, y
@@ -114,6 +117,7 @@ export default function AdminCategoriasPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       if (editingCategory === null) {
         const { category } = await categoriasService.createCategory(name);
@@ -133,6 +137,8 @@ export default function AdminCategoriasPage() {
       } else {
         setFormError('Ocurrió un error inesperado al guardar la categoría.');
       }
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -222,8 +228,7 @@ export default function AdminCategoriasPage() {
         </table>
       )}
 
-      {/* --- YA ARMADO: shell del modal de crear/editar (UI). El submit
-          real es TODO (ver handleSubmit arriba). --- */}
+      {/* --- Modal de crear/editar --- */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 px-4">
           <div
@@ -256,8 +261,12 @@ export default function AdminCategoriasPage() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white">
-                  Guardar
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {isSaving ? 'Guardando…' : 'Guardar'}
                 </button>
               </div>
             </form>
