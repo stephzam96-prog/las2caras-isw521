@@ -172,6 +172,34 @@ export default function Navbar() {
                   >
                     Crear publicación
                   </Link>
+                  {user?.role === 'SUPERADMIN' && (
+                    <>
+                      <p className="mt-1 border-t border-gray-200 px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:border-gray-700 dark:text-gray-500">
+                        Admin
+                      </p>
+                      <Link
+                        to="/admin/users"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        Usuarios
+                      </Link>
+                      <Link
+                        to="/admin/categories"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        Categorías
+                      </Link>
+                      <Link
+                        to="/admin/moderation"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        Moderación
+                      </Link>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -251,13 +279,26 @@ export default function Navbar() {
           <div className="flex items-center justify-between">
             <ThemeToggle />
             {isAuthenticated ? (
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Link to="/views/new" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
                   Crear publicación
                 </Link>
                 <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
                   Mi perfil
                 </Link>
+                {user?.role === 'SUPERADMIN' && (
+                  <>
+                    <Link to="/admin/users" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
+                      Usuarios
+                    </Link>
+                    <Link to="/admin/categories" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
+                      Categorías (Admin)
+                    </Link>
+                    <Link to="/admin/moderation" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:underline">
+                      Moderación
+                    </Link>
+                  </>
+                )}
                 <button type="button" onClick={handleLogout} className="text-sm text-red-600">
                   Cerrar sesión
                 </button>
