@@ -10,6 +10,7 @@ import { comentariosService } from '../../services/comentariosService';
 import { cacheService } from '../../services/cacheService';
 import { ApiError } from '../../services/httpClient';
 import { extractYoutubeId } from '../../utils/youtube';
+import { translateCategoryName } from '../../utils/categoryLabels';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
@@ -123,7 +124,7 @@ function PublicacionDetalle({ view }: { view: View }) {
     <div className="mx-auto max-w-5xl px-4 py-6">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">{view.category.name}</span>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">{translateCategoryName(view.category.name)}</span>
           <span>
             por{' '}
             <Link to={`/authors/${view.author.id}`} className="hover:underline">

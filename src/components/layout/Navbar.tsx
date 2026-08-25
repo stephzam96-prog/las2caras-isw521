@@ -6,6 +6,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { categoriasService } from '../../services/categoriasService';
 import { cacheService } from '../../services/cacheService';
 import ThemeToggle from '../ui/ThemeToggle';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 // Navbar global: se monta una sola vez en App.tsx (fuera de <AppRoutes/>),
 // así que aparece en TODAS las pantallas -- incluidas 404/403, que no
@@ -108,7 +109,7 @@ export default function Navbar() {
                       onClick={() => setIsCategoriesOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
-                      {c.name}
+                      {translateCategoryName(c.name)}
                     </Link>
                   </li>
                 ))}
@@ -227,7 +228,7 @@ export default function Navbar() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="py-1 text-sm text-gray-700 dark:text-gray-300"
                 >
-                  {c.name}
+                  {translateCategoryName(c.name)}
                 </Link>
               ))}
             </div>

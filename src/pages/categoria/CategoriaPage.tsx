@@ -8,6 +8,7 @@ import GridPublicaciones from '../../components/publicaciones/GridPublicaciones'
 import FiltroOrdenHashtag from '../../components/publicaciones/FiltroOrdenHashtag';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 const PAGE_SIZE = 20;
 const VALID_SORTS: ViewSort[] = ['recent', 'likes', 'dislikes'];
@@ -147,9 +148,9 @@ export default function CategoriaPage() {
             navegable es Inicio y la categoría actual. */}
         <span>Categorías</span>
         {' › '}
-        <span>{category.name}</span>
+        <span>{translateCategoryName(category.name)}</span>
       </nav>
-      <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{category.name}</h1>
+      <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{translateCategoryName(category.name)}</h1>
       <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
         {total} {total === 1 ? 'publicación' : 'publicaciones'}
       </p>

@@ -9,6 +9,7 @@ import { hashtagsService } from '../../services/hashtagsService';
 import { cacheService, type DraftPublicacion, type DraftSideForm } from '../../services/cacheService';
 import { ApiError } from '../../services/httpClient';
 import { extractYoutubeId } from '../../utils/youtube';
+import { translateCategoryName } from '../../utils/categoryLabels';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import ConfirmModal from '../../components/ui/ConfirmModal';
@@ -388,7 +389,7 @@ export default function CrearEditarPublicacionPage() {
             <option value="">Seleccioná una categoría</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {translateCategoryName(c.name)}
               </option>
             ))}
           </select>

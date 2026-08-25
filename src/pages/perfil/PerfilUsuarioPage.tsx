@@ -8,6 +8,7 @@ import { cacheService } from '../../services/cacheService';
 import GridPublicaciones from '../../components/publicaciones/GridPublicaciones';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 type SectionStatus = 'loading' | 'success' | 'empty' | 'error';
 
@@ -190,7 +191,7 @@ function ItemFavorito({ view, onRemoved }: { view: View; onRemoved: (id: string)
         <Link to={`/views/${view.id}`} className="font-medium text-blue-600 hover:underline">
           {sideA?.title}
         </Link>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{view.category.name}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{translateCategoryName(view.category.name)}</p>
       </div>
       <button
         type="button"

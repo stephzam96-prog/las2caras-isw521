@@ -3,6 +3,7 @@ import type { ReactionType, View, ViewSide } from '../../types';
 import { useSideReactions } from '../../hooks/useSideReactions';
 import { useFavorite } from '../../hooks/useFavorite';
 import { useShare } from '../../hooks/useShare';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 interface TarjetaPublicacionProps {
   view: View;
@@ -30,7 +31,7 @@ export default function TarjetaPublicacion({ view }: TarjetaPublicacionProps) {
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">{view.category.name}</span>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">{translateCategoryName(view.category.name)}</span>
           <span>
             por{' '}
             <Link to={`/authors/${view.author.id}`} className="hover:underline">

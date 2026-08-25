@@ -4,6 +4,7 @@ import { publicacionesService } from '../../services/publicacionesService';
 import { useToast } from '../../hooks/useToast';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 const STATUS_LABEL: Record<ViewStatus, { text: string; className: string }> = {
   PUBLISHED: { text: 'Publicada', className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
@@ -105,7 +106,7 @@ export default function AdminModeracionPage() {
                 return (
                   <tr key={view.id} className="border-b border-gray-100 dark:border-gray-800">
                     <td className="py-2">{sideA?.title}</td>
-                    <td className="py-2">{view.category.name}</td>
+                    <td className="py-2">{translateCategoryName(view.category.name)}</td>
                     <td className="py-2">{view.author.name}</td>
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${badge.className}`}>{badge.text}</span>

@@ -8,6 +8,7 @@ import GridPublicaciones from '../../components/publicaciones/GridPublicaciones'
 import FiltroOrdenHashtag from '../../components/publicaciones/FiltroOrdenHashtag';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 const PAGE_SIZE = 10;
 const VALID_SORTS: ViewSort[] = ['recent', 'likes', 'dislikes'];
@@ -159,7 +160,7 @@ export default function TableroPage() {
             <option value="">Todas las categorías</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {translateCategoryName(c.name)}
               </option>
             ))}
           </select>

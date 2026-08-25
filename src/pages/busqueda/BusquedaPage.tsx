@@ -6,6 +6,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import EmptyState from '../../components/ui/EmptyState';
 import Spinner from '../../components/ui/Spinner';
 import HighlightedText from '../../components/ui/HighlightedText';
+import { translateCategoryName } from '../../utils/categoryLabels';
 
 // NOTA IMPORTANTE (ver también CLAUDE.md, sección "GridPublicaciones/
 // TarjetaPublicacion -- regla de uso"): esta pantalla NO reutiliza
@@ -159,7 +160,7 @@ function ResultadoBusquedaCard({ view, query }: { view: SearchViewResult; query:
       <Link to={`/views/${view.id}`} className="font-medium text-blue-600 hover:underline">
         <HighlightedText text={sideA?.title ?? ''} query={query} />
       </Link>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{view.category.name}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{translateCategoryName(view.category.name)}</p>
     </li>
   );
 }
