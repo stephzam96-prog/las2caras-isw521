@@ -4,6 +4,7 @@ import { publicacionesService } from '../../services/publicacionesService';
 import { useToast } from '../../hooks/useToast';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import { translateCategoryName } from '../../utils/categoryLabels';
 
 const STATUS_LABEL: Record<ViewStatus, { text: string; className: string }> = {
@@ -22,6 +23,8 @@ export default function AdminModeracionPage() {
   // Id de la publicación cuyo cambio de estado se está procesando, para
   // deshabilitar su botón y evitar doble submit.
   const [processingId, setProcessingId] = useState<string | null>(null);
+  // Publicación para la que se está pidiendo confirmación (null = cerrado).
+  const [toggleTarget, setToggleTarget] = useState<View | null>(null);
 
   const fetchViews = useCallback(async () => {
     setStatus('loading');
@@ -114,7 +117,7 @@ export default function AdminModeracionPage() {
                     <td className="py-2">
                       <button
                         type="button"
-                        onClick={() => handleTogglePublish(view)}
+                        onClick={() => setToggleTarget(view)}
                         disabled={processingId === view.id}
                         className={
                           view.status === 'PUBLISHED'
@@ -132,6 +135,25 @@ export default function AdminModeracionPage() {
           </table>
         </div>
       )}
+
+      {/* Confirmación antes de despublicar/republicar (acción de moderación,
+          la pedimos siempre según el enunciado). */}
+      <ConfirmModal
+        isOpen={toggleTarget !== null}
+        title={toggleTarget?.status === 'PUBLISHED' ? 'Despublicar publicación' : 'Republicar publicación'}
+        message={
+          toggleTarget?.status === 'PUBLISHED'
+            ? 'Va a dejar de verse en el tablero público hasta que la vuelvas a publicar. ¿Continuar?'
+            : 'Va a volver a verse en el tablero público. ¿Continuar?'
+        }
+        confirmLabel={toggleTarget?.status === 'PUBLISHED' ? 'Despublicar' : 'Publicar'}
+        variant={toggleTarget?.status === 'PUBLISHED' ? 'danger' : 'default'}
+        onConfirm={() => {
+          if (toggleTarget) handleTogglePublish(toggleTarget);
+          setToggleTarget(null);
+        }}
+        onCancel={() => setToggleTarget(null)}
+      />
     </div>
   );
 }

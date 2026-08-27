@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useDebounce } from '../../hooks/useDebounce';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -43,6 +44,10 @@ export default function AdminUsuariosPage() {
   // Id del usuario cuyo baneo/desbaneo se está procesando (deshabilita su
   // botón mientras tanto para evitar doble clic).
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  // Usuario para el que se está pidiendo confirmación de baneo/desbaneo
+  // (null = modal cerrado).
+  const [banTarget, setBanTarget] = useState<User | null>(null);
 
   useEffect(() => {
     setStatus('loading');
@@ -133,7 +138,7 @@ export default function AdminUsuariosPage() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => handleToggleBan(rowUser)}
+                            onClick={() => setBanTarget(rowUser)}
                             disabled={processingId === rowUser.id}
                             className={
                               rowUser.status === 'SUSPENDED'
@@ -180,6 +185,27 @@ export default function AdminUsuariosPage() {
           </div>
         </>
       )}
+
+      {/* Confirmación antes de banear/desbanear (acción sensible, la pedimos
+          siempre según el enunciado). */}
+      <ConfirmModal
+        isOpen={banTarget !== null}
+        title={banTarget?.status === 'SUSPENDED' ? 'Desbanear usuario' : 'Banear usuario'}
+        message={
+          banTarget
+            ? banTarget.status === 'SUSPENDED'
+              ? `¿Desbanear a ${banTarget.name}? Va a poder volver a iniciar sesión.`
+              : `¿Banear a ${banTarget.name}? No va a poder iniciar sesión hasta que lo desbanees.`
+            : ''
+        }
+        confirmLabel={banTarget?.status === 'SUSPENDED' ? 'Desbanear' : 'Banear'}
+        variant={banTarget?.status === 'SUSPENDED' ? 'default' : 'danger'}
+        onConfirm={() => {
+          if (banTarget) handleToggleBan(banTarget);
+          setBanTarget(null);
+        }}
+        onCancel={() => setBanTarget(null)}
+      />
     </div>
   );
 }
