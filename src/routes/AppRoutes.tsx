@@ -6,6 +6,15 @@ import ActivarCuentaPage from '../pages/auth/ActivarCuentaPage';
 import ErrorPage from '../pages/error/ErrorPage';
 import { AuthGuard } from './AuthGuard';
 import CategoriaPage from '../pages/categoria/CategoriaPage';
+import BusquedaPage from '../pages/busqueda/BusquedaPage';
+import DetallePublicacionPage from '../pages/publicacion/DetallePublicacionPage';
+import CrearEditarPublicacionPage from '../pages/publicacion/CrearEditarPublicacionPage';
+import PerfilAutorPage from '../pages/perfil/PerfilAutorPage';
+import PerfilUsuarioPage from '../pages/perfil/PerfilUsuarioPage';
+import AdminCategoriasPage from '../pages/admin/AdminCategoriasPage';
+import AdminUsuariosPage from '../pages/admin/AdminUsuariosPage';
+import AdminModeracionPage from '../pages/admin/AdminModeracionPage';
+import { RoleGuard } from './RoleGuard';
 
 // Rutas de auth y tablero ya armadas acá; el resto (categorías, búsqueda,
 // admin, etc.) se va agregando pantalla por pantalla en sus propias features.
@@ -17,9 +26,19 @@ export function AppRoutes() {
       <Route path="/register" element={<RegistroPage />} />
       <Route path="/auth/activate/:token" element={<ActivarCuentaPage />} />
       <Route path="/categories/:id" element={<CategoriaPage />} />
+      <Route path="/search" element={<BusquedaPage />} />
+      <Route path="/views/:id" element={<DetallePublicacionPage />} />
+      <Route path="/authors/:id" element={<PerfilAutorPage />} />
 
       <Route element={<AuthGuard />}>
-        {/* futuras rutas autenticadas: /views/new, /profile, etc. */}
+        <Route path="/profile" element={<PerfilUsuarioPage />} />
+        <Route path="/views/new" element={<CrearEditarPublicacionPage />} />
+        <Route path="/views/:id/edit" element={<CrearEditarPublicacionPage />} />
+        <Route element={<RoleGuard allowedRoles={['SUPERADMIN']} />}>
+          <Route path="/admin/categories" element={<AdminCategoriasPage />} />
+          <Route path="/admin/users" element={<AdminUsuariosPage />} />
+          <Route path="/admin/moderation" element={<AdminModeracionPage />} />
+        </Route>
       </Route>
 
       <Route

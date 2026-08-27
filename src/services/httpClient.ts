@@ -72,14 +72,26 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   let response: Response;
-  try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      ...rest,
-      headers: finalHeaders,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    throw new ApiError('network', 'No se pudo conectar con el servidor. Revisá tu conexión.');
+  const isGet = options.method === 'GET' || !options.method;
+  let attempts = 0;
+  const maxAttempts = isGet ? 2 : 1;
+
+  while (true) {
+    try {
+      response = await fetch(`${BASE_URL}${path}`, {
+        ...rest,
+        headers: finalHeaders,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+      break;
+    } catch (err) {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        throw new ApiError('network', 'No se pudo conectar con el servidor. Revisá tu conexión.');
+      }
+      // Wait 1.5 seconds before retrying
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
   }
 
   if (response.status === 204) {

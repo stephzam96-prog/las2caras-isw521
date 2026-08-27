@@ -20,4 +20,27 @@ export const categoriasService = {
   getCategory(id: string): Promise<GetCategoryResponse> {
     return httpClient.get<GetCategoryResponse>(`/categories/${id}`);
   },
+
+  // --- Admin (SUPERADMIN) ---
+
+  // A diferencia de listCategories() (publico), este SI incluye las
+  // categorias soft-deleted (deletedAt no nulo) -- verificado contra el
+  // backend real.
+  adminListCategories(): Promise<ListCategoriesResponse> {
+    return httpClient.get<ListCategoriesResponse>('/admin/categories');
+  },
+  // 409 (ApiError kind 'conflict') si ya existe una categoria con ese
+  // nombre -- probado en vivo contra la API real.
+  createCategory(name: string): Promise<GetCategoryResponse> {
+    return httpClient.post<GetCategoryResponse>('/admin/categories', { name });
+  },
+  updateCategory(id: string, name: string): Promise<GetCategoryResponse> {
+    return httpClient.put<GetCategoryResponse>(`/admin/categories/${id}`, { name });
+  },
+  // Soft-delete (204, sin body). La API NO valida si la categoria tiene
+  // publicaciones asociadas -- por eso la UI debe confirmar antes de
+  // llamar esto.
+  deleteCategory(id: string): Promise<void> {
+    return httpClient.delete<void>(`/admin/categories/${id}`);
+  },
 };

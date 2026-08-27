@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate, Link, type Location } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError } from '../../services/httpClient';
+import PasswordInput from '../../components/ui/PasswordInput';
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -69,28 +70,27 @@ export default function LoginPage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Contraseña
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
-          />
-        </div>
+        <PasswordInput
+          id="password"
+          label="Contraseña"
+          value={password}
+          onChange={setPassword}
+          required
+          autoComplete="current-password"
+        />
 
         {validationMessages.length > 0 && (
-          <ul className="list-disc pl-5 text-sm text-red-600">
+          <ul role="alert" className="list-disc pl-5 text-sm text-red-600">
             {validationMessages.map((msg) => (
               <li key={msg}>{msg}</li>
             ))}
           </ul>
         )}
-        {formError && <p className="text-sm text-red-600">{formError}</p>}
+        {formError && (
+          <p role="alert" className="text-sm text-red-600">
+            {formError}
+          </p>
+        )}
 
         <button
           type="submit"
