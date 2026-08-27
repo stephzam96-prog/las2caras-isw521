@@ -110,18 +110,13 @@ el detalle completo ver `estructura-carpetas.md`.
 
 ## Capturas de pantalla
 
-<!-- TODO (equipo): reemplazar por capturas reales antes de la entrega del
-     jueves 26/08. El enunciado pide capturas de las vistas principales
-     (Tablero, Detalle de Publicación, Crear/Editar y al menos una pantalla
-     de Admin) para el tramo 3/3 de la rúbrica de README. -->
-
 | Tablero Principal | Detalle de Publicación |
 |---|---|
-| _(pendiente)_ | _(pendiente)_ |
+| ![Tablero](screenshots/tablero.png) | ![Detalle](screenshots/detalle.png) |
 
 | Crear/Editar Publicación | Panel Superadmin |
 |---|---|
-| _(pendiente)_ | _(pendiente)_ |
+| ![Crear/Editar](screenshots/crear-editar.png) | ![Admin Usuarios](screenshots/admin-usuarios.png) |
 
 ## Rutas principales
 
